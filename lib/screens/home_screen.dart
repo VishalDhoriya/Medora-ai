@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'model_manager_screen.dart';
 import 'chat_screen.dart';
 import 'huggingface_token_settings_screen.dart';
+import 'audio_recorder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,11 +18,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const ModelManagerScreen(),
     const ChatScreen(),
+    const AudioRecorderScreen(),
   ];
 
   final List<String> _titles = [
     'Model Manager',
     'LLM Chat',
+    'Audio Recorder',
   ];
 
   @override
@@ -67,6 +70,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: 'Chat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.mic),
+            label: 'Recorder',
           ),
         ],
       ),

@@ -38,6 +38,9 @@ dependencies:
   provider: ^6.1.1
   shared_preferences: ^2.2.2
   path_provider: ^2.1.2
+  record: ^6.0.0
+  just_audio: ^0.9.36
+  whisper_flutter_new: ^1.0.1
 
 dev_dependencies:
   flutter_test:
