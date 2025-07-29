@@ -41,7 +41,8 @@ dependencies:
   record: ^6.0.0
   just_audio: ^0.9.36
   whisper_flutter_new: ^1.0.1
-
+  ffmpeg_kit_flutter_new: ^3.0.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

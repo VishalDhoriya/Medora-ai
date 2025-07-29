@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'model_config_service.dart';
 
 class LlmService {
+  static bool _isModelInitialized = false;
   static const _channel = MethodChannel('com.google.ai.edge/llm');
   static const _inferenceChannel = EventChannel('com.google.ai.edge/inference_stream');
   
@@ -15,8 +16,12 @@ class LlmService {
     double? topP,
     String? accelerator,
   }) async {
+    if (_isModelInitialized) {
+      print('Model already initialized, skipping.');
+      return true;
+    }
     try {
-      return await _channel.invokeMethod('initializeModel', {
+      final result = await _channel.invokeMethod('initializeModel', {
         'modelId': config.modelId,
         'modelPath': modelPath,
         'maxTokens': maxTokens ?? 1024,
@@ -25,6 +30,10 @@ class LlmService {
         'topP': topP ?? 0.9,
         'accelerator': accelerator ?? (config.accelerators.isNotEmpty ? config.accelerators.first.toLowerCase() : 'gpu'),
       }) as bool;
+      if (result) {
+        _isModelInitialized = true;
+      }
+      return result;
     } catch (e) {
       print('Model initialization error: $e');
       return false;

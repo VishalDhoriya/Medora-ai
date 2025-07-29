@@ -3,7 +3,9 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
+import '../services/llm_service.dart';
 import 'dart:io';
+import 'dart:async';
 
 class AudioRecorderScreen extends StatefulWidget {
   const AudioRecorderScreen({Key? key}) : super(key: key);
@@ -23,6 +25,9 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   bool canTranscribe = false;
   String? transcript;
   bool isTranscribing = false;
+  bool isGeneratingLlm = false;
+  String? llmResponse;
+  StreamSubscription<InferenceResult>? _llmStreamSub;
 
   Future<void> _startRecording() async {
     final hasPermission = await _audioRecorder.hasPermission();
@@ -31,8 +36,8 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       final path = '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
       await _audioRecorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.wav, // Specify WAV format
-          sampleRate: 16000,         // Whisper prefers 16kHz
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
           bitRate: 128000,
         ),
         path: path,
@@ -44,6 +49,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
         audioPath = null;
         canTranscribe = false;
         transcript = null;
+        llmResponse = null;
       });
     } else {
       if (mounted) {
@@ -92,6 +98,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       isPlaying = false;
       canTranscribe = false;
       transcript = null;
+      llmResponse = null;
     });
   }
 
@@ -125,6 +132,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     setState(() {
       isTranscribing = true;
       transcript = null;
+      llmResponse = null;
     });
     final whisper = Whisper(
       model: WhisperModel.base,
@@ -143,6 +151,9 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
         transcript = result.text;
         isTranscribing = false;
       });
+      if (result.text.isNotEmpty) {
+        _generateLlmResponse(result.text);
+      }
     } catch (e) {
       setState(() {
         transcript = 'Transcription error: $e';
@@ -151,9 +162,33 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     }
   }
 
+  Future<void> _generateLlmResponse(String prompt) async {
+    setState(() {
+      isGeneratingLlm = true;
+      llmResponse = null;
+    });
+    await _llmStreamSub?.cancel();
+    _llmStreamSub = LlmService.getInferenceStream().listen((result) {
+      setState(() {
+        if (llmResponse == null) llmResponse = '';
+        llmResponse = llmResponse! + result.partialResult;
+        if (result.isDone) {
+          isGeneratingLlm = false;
+        }
+      });
+    }, onError: (error) {
+      setState(() {
+        llmResponse = 'LLM error: $error';
+        isGeneratingLlm = false;
+      });
+    });
+    await LlmService.generateResponse(prompt);
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _llmStreamSub?.cancel();
     super.dispose();
   }
 
@@ -203,6 +238,17 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
                       const SizedBox(height: 16),
                       Text('Transcript:'),
                       SelectableText(transcript!),
+                    ],
+                    if (isGeneratingLlm) ...[
+                      const SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 8),
+                      Text('Generating LLM response...'),
+                    ],
+                    if (llmResponse != null) ...[
+                      const SizedBox(height: 16),
+                      Text('LLM Response:'),
+                      SelectableText(llmResponse!),
                     ],
                   ],
                 ),
