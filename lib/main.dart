@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,9 @@ class MyApp extends StatelessWidget {
         final onboardingDone = snapshot.data ?? false;
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            textTheme: GoogleFonts.plusJakartaSansTextTheme(),
+          ),
           home: onboardingDone ? const WelcomeScreen() : const OnboardingScreen(),
           routes: {
             '/welcome': (context) => const WelcomeScreen(),

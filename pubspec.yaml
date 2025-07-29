@@ -42,6 +42,8 @@ dependencies:
   just_audio: ^0.9.36
   whisper_flutter_new: ^1.0.1
   ffmpeg_kit_flutter_new: ^3.0.1
+  google_fonts: ^6.2.1
+  phosphor_flutter: ^2.1.0
   
 dev_dependencies:
   flutter_test:

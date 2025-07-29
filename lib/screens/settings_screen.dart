@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import '../services/model_config_service.dart';
@@ -95,15 +96,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('User Name', style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextField(controller: _nameController),
+                  Text('User Name', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+                  TextField(controller: _nameController, style: GoogleFonts.plusJakartaSans()),
                   const SizedBox(height: 16),
-                  const Text('Hugging Face Token', style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextField(controller: _hfTokenController, obscureText: true),
+                  Text('Hugging Face Token', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+                  TextField(controller: _hfTokenController, obscureText: true, style: GoogleFonts.plusJakartaSans()),
                   const SizedBox(height: 16),
-                  const Text('Model', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Model', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
                   _modelNames.isEmpty
-                      ? Text(_selectedModel ?? '')
+                      ? Text(_selectedModel ?? '', style: GoogleFonts.plusJakartaSans())
                       : DropdownButtonFormField<String>(
                           value: _selectedModel,
                           items: _modelConfigs.map((config) {
@@ -112,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               value: config.modelName,
                               child: Row(
                                 children: [
-                                  Text(config.modelName),
+                                  Text(config.modelName, style: GoogleFonts.plusJakartaSans()),
                                   const SizedBox(width: 8),
                                   downloaded
                                       ? const Icon(Icons.check_circle, color: Colors.green, size: 18)
@@ -133,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               LinearProgressIndicator(value: _downloadProgress!.progress, minHeight: 6),
                               const SizedBox(height: 8),
-                              Text(_downloadProgress!.sizeText + (_downloadProgress!.speedText.isNotEmpty ? ' • ' + _downloadProgress!.speedText : '') + (_downloadProgress!.etaText.isNotEmpty ? ' • ' + _downloadProgress!.etaText : ''), style: const TextStyle(fontSize: 14)),
+                              Text(_downloadProgress!.sizeText + (_downloadProgress!.speedText.isNotEmpty ? ' • ' + _downloadProgress!.speedText : '') + (_downloadProgress!.etaText.isNotEmpty ? ' • ' + _downloadProgress!.etaText : ''), style: GoogleFonts.plusJakartaSans(fontSize: 14)),
                             ],
                           )
                         : SizedBox(
@@ -178,7 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _savePrefs,
-                      child: const Text('Save'),
+                      child: Text('Save', style: GoogleFonts.plusJakartaSans()),
                     ),
                   ),
                 ],
