@@ -1,14 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:whisper_flutter_new/whisper_flutter_new.dart';
+import 'package:flutter_gallery/screens/real_time_transcriber.dart';
+
 import '../services/llm_service.dart';
 
 class TranscribingScreen extends StatefulWidget {
-  final Whisper? whisperModel;
-  final String audioPath;
   final String systemPrompt;
-  const TranscribingScreen({Key? key, required this.whisperModel, required this.audioPath, required this.systemPrompt}) : super(key: key);
+  final RealTimeTranscriber transcriber;
+  const TranscribingScreen({
+    Key? key,
+    required this.transcriber,
+    required this.systemPrompt,
+  }) : super(key: key);
 
   @override
   State<TranscribingScreen> createState() => _TranscribingScreenState();
@@ -35,28 +40,21 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
   }
 
   Future<void> _startTranscription() async {
-    if (widget.whisperModel == null) return;
     try {
-      final result = await widget.whisperModel!.transcribe(
-        transcribeRequest: TranscribeRequest(
-          audio: widget.audioPath,
-          isTranslate: false,
-          isNoTimestamps: true,
-          splitOnWord: false,
-        ),
-      );
+      final result = await widget.transcriber.stop();
       setState(() {
-        _transcript = result.text;
+        _transcript = result;
       });
-      if (result.text.isNotEmpty) {
-        final promptWithSystem = "${widget.systemPrompt}\n${result.text}";
-        _generateLlmResponse(promptWithSystem);
-      }
     } catch (e) {
       setState(() {
         _transcript = 'Transcription error: $e';
       });
     }
+    if (_transcript != null && _transcript!.isNotEmpty) {
+      final promptWithSystem = "${widget.systemPrompt}\n${_transcript}";
+      _generateLlmResponse(promptWithSystem);
+    }
+
     _dotTimer?.cancel();
   }
 
@@ -66,25 +64,30 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
       _llmResponse = null;
     });
     await _llmStreamSub?.cancel();
-    _llmStreamSub = LlmService.getInferenceStream().listen((result) {
-      setState(() {
-        if (_llmResponse == null) _llmResponse = '';
-        _llmResponse = _llmResponse! + result.partialResult;
-        if (result.isDone) {
-          _isGeneratingLlm = false;
-          try {
-            _parsedLlmJson = _llmResponse != null ? _parseJson(_llmResponse!) : null;
-          } catch (e) {
-            _parsedLlmJson = null;
+    _llmStreamSub = LlmService.getInferenceStream().listen(
+      (result) {
+        setState(() {
+          if (_llmResponse == null) _llmResponse = '';
+          _llmResponse = _llmResponse! + result.partialResult;
+          if (result.isDone) {
+            _isGeneratingLlm = false;
+            try {
+              _parsedLlmJson = _llmResponse != null
+                  ? _parseJson(_llmResponse!)
+                  : null;
+            } catch (e) {
+              _parsedLlmJson = null;
+            }
           }
-        }
-      });
-    }, onError: (error) {
-      setState(() {
-        _isGeneratingLlm = false;
-        _llmResponse = 'LLM error: $error';
-      });
-    });
+        });
+      },
+      onError: (error) {
+        setState(() {
+          _isGeneratingLlm = false;
+          _llmResponse = 'LLM error: $error';
+        });
+      },
+    );
     await LlmService.generateResponse(prompt);
   }
 
@@ -105,7 +108,10 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('Human-Readable Summary:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const Text(
+          'Human-Readable Summary:',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 16),
         ..._buildJsonSections(json),
       ],
@@ -115,7 +121,12 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
   List<Widget> _buildJsonSections(Map<String, dynamic> json) {
     List<Widget> widgets = <Widget>[];
     json.forEach((key, value) {
-      widgets.add(Text(key, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)));
+      widgets.add(
+        Text(
+          key,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      );
       widgets.add(const SizedBox(height: 8));
       if (value is Map) {
         widgets.addAll(_buildJsonSections(Map<String, dynamic>.from(value)));
@@ -123,13 +134,25 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
         if (value.isEmpty) {
           widgets.add(const Text('None', style: TextStyle(fontSize: 16)));
         } else {
-          widgets.add(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: value.map<Widget>((item) => Text('- $item', style: const TextStyle(fontSize: 16))).toList(),
-          ));
+          widgets.add(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: value
+                  .map<Widget>(
+                    (item) =>
+                        Text('- $item', style: const TextStyle(fontSize: 16)),
+                  )
+                  .toList(),
+            ),
+          );
         }
       } else {
-        widgets.add(Text(value == null ? 'None' : value.toString(), style: const TextStyle(fontSize: 16)));
+        widgets.add(
+          Text(
+            value == null ? 'None' : value.toString(),
+            style: const TextStyle(fontSize: 16),
+          ),
+        );
       }
       widgets.add(const SizedBox(height: 12));
     });
@@ -158,7 +181,10 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
                 padding: const EdgeInsets.only(bottom: 32),
                 child: Text(
                   'Transcribing' + dots,
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             Expanded(
@@ -167,7 +193,13 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_transcript != null) ...[
-                      const Text('Transcript:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Transcript:',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -181,7 +213,13 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      const Text('LLM Response:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'LLM Response:',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -190,20 +228,45 @@ class _TranscribingScreenState extends State<TranscribingScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: _isGeneratingLlm
-                            ? const Text('Generating...', style: TextStyle(fontSize: 16, color: Colors.grey))
+                            ? const Text(
+                                'Generating...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              )
                             : (_llmResponse != null
-                                ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      SelectableText(_llmResponse!, style: const TextStyle(fontSize: 18)),
-                                      const SizedBox(height: 32),
-                                      if (_parsedLlmJson != null)
-                                        _buildHumanReadableJson(_parsedLlmJson!)
-                                      else if (_llmResponse != null && !_isGeneratingLlm)
-                                        const Text('Could not parse LLM response as JSON.', style: TextStyle(fontSize: 16, color: Colors.red)),
-                                    ],
-                                  )
-                                : const Text('No response', style: TextStyle(fontSize: 16, color: Colors.grey))),
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SelectableText(
+                                          _llmResponse!,
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        if (_parsedLlmJson != null)
+                                          _buildHumanReadableJson(
+                                            _parsedLlmJson!,
+                                          )
+                                        else if (_llmResponse != null &&
+                                            !_isGeneratingLlm)
+                                          const Text(
+                                            'Could not parse LLM response as JSON.',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                      ],
+                                    )
+                                  : const Text(
+                                      'No response',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey,
+                                      ),
+                                    )),
                       ),
                     ],
                   ],
