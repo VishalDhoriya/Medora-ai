@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gallery/screens/real_time_transcriber.dart';
-import 'package:flutter_gallery/screens/transcribing_screen.dart';
+import 'package:flutter_gallery/screens/transcribing_timeline_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -174,74 +174,63 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _stopRecording() async {
-    const systemPrompt = """"You are a clinical documentation assistant.  
-When I send you a doctor–patient transcript, return exactly one JSON object with these keys:  
-
-{
-  "Subjective": {
-    "CC": string|null,
-    "HPI": {
-      "Onset": string|null,
-      "Location": string|null,
-      "Duration": string|null,
-      "Characteristics": string|null,
-      "AggravatingRelieving": string|null,
-      "Timing": string|null,
-      "Severity": string|null
+    const systemPrompt = """"{
+  "system_prompt": {
+    "role": "You are a highly efficient AI medical assistant for on-device use. Your entire output must be a single, extremely brief JSON object.",
+    "primary_directive": "Follow the field instructions precisely. Output ONLY the completed JSON template.",
+    "rules": {
+      "non_medical_case": "If the input is not a medical query, your entire output must be: {\"extraction_success\": false}",
+      "medical_case": "If it is a medical query, populate the output_template below, strictly following the field instructions and the output template."
     },
-    "RoS": [string,...],
-    "PMH": [string,...],
-    "Meds": [string,...],
-    "Allergies": [string,...],
-    "Social": [string,...],
-    "Family": [string,...]
-  },
-  "Objective": {
-    "Vitals": {
-      "Temp": string|null,
-      "BP": string|null,
-      "HR": string|null,
-      "RR": string|null,
-      "SpO2": string|null
+    "field_instructions": {
+      "extract_from_text": {
+        "instruction": "Find and briefly summarize this information directly from the user's text:",
+        "fields": {
+          "Reported_Symptoms": "Keyword list of symptoms.",
+          "HPI": "1-sentence illness story (<15 words).",
+          "Meds_Allergies": "Keyword list of meds & allergies.",
+          "Vitals_Exam": "Objective data mentioned (e.g., 'Temp 101F, red throat')."
+        }
+      },
+      "generate_from_analysis": {
+        "instruction": "Analyze the extracted data and generate a concise clinical assessment and plan for these fields:",
+        "fields": {
+          "Symptom_Assessment": "Clinical analysis phrase (<15 words).",
+          "Primary_Diagnosis": "Most likely diagnosis (1-5 words).",
+          "Differentials": "List of other possible diagnoses.",
+          "Diagnostic_Tests": "Keyword list of recommended tests.",
+          "Therapeutics": "Keyword list of treatments.",
+          "Education": "List of very short advice (<10 words each).",
+          "FollowUp": "Brief instruction on when to return."
+        }
+      }
     },
-    "Exam": {
-      "General": string|null,
-      "HEENT": string|null,
-      "Cardio": string|null,
-      "Resp": string|null,
-      "Abd": string|null,
-      "Extremities": string|null,
-      "Neuro": string|null
-    },
-    "LabsImaging": [string,...]
-  },
-  "Assessment": {
-    "Primary": {
-      "Name": string|null,
-      "ICD10": string|null,
-      "Reason": string|null
-    },
-    "Differentials": [string,...]
-  },
-  "Plan": {
-    "Diagnostics": [string,...],
-    "Therapeutics": {
-      "Meds": [string,...],
-      "NonRx": [string,...]
-    },
-    "Education": [string,...],
-    "FollowUp": string|null
+    "output_template": {
+      "extraction_success": true,
+      "data": {
+        "Subjective": {
+          "Reported_Symptoms": [],
+          "HPI": null,
+          "Meds_Allergies": []
+        },
+        "Objective": {
+          "Vitals_Exam": null
+        },
+        "Assessment": {
+          "Symptom_Assessment": null,
+          "Primary_Diagnosis": null,
+          "Differentials": []
+        },
+        "Plan": {
+          "Diagnostic_Tests": [],
+          "Therapeutics": [],
+          "Education": [],
+          "FollowUp": null
+        }
+      }
+    }
   }
-}
-
-Rules:
-1. Output only valid JSON—no extra text.
-2. If any field is missing in the transcript, use `null` for strings or `[]` for lists.
-3. Aim for about 50–60 words total (each field value ≤2 sentences).
-4. Preserve the key names and nesting exactly.
-
-BEGIN.
-""";
+}""";
 
     setState(() {
       _isRecording = false;
@@ -255,7 +244,7 @@ BEGIN.
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => TranscribingScreen(
+        builder: (_) => TranscribingTimelineScreen(
           transcriber: transcriber,
           systemPrompt: systemPrompt,
         ),
@@ -330,19 +319,27 @@ BEGIN.
                 ],
               )
             else if (_transcript != null)
-              Column(
-                children: [
-                  const Text(
-                    'Transcript:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  SelectableText(
-                    _transcript!,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ],
-              )
+                Column( //temporary fix to avoid showing transcript in the welcome screen
+                  children: [
+                    const Text(
+                      '',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                )
+              // Column(
+              //   children: [
+              //     const Text(
+              //       'Transcript:',
+              //       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              //     ),
+              //     const SizedBox(height: 12),
+              //     SelectableText(
+              //       _transcript!,
+              //       style: const TextStyle(fontSize: 18),
+              //     ),
+              //   ],
+              // )
             else if (!_isRecording)
               GestureDetector(
                 onTap: _startRecording,
