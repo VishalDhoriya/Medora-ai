@@ -314,22 +314,41 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                     isExpanded: _expanded[0],
                                     backgroundColor: const Color(0xFFF4F9FE),
                                     headerBuilder: (context, isExpanded) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                       decoration: const BoxDecoration(
                                         color: Color(0xFFF4F9FE),
                                         borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                                       ),
-                                      child: const Text('Subjective', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                                    ),
-                                    body: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          _listField('Reported Symptoms', data['Subjective']?['Reported_Symptoms']),
-                                          _field('HPI', data['Subjective']?['HPI']),
-                                          _listField('Meds & Allergies', data['Subjective']?['Meds_Allergies']),
+                                          Flexible(
+                                            child: Text(
+                                              'Subjective',
+                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ),
                                         ],
+                                      ),
+                                    ),
+                                    body: Container(
+                                      decoration: const BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _listField('Reported Symptoms', data['Subjective']?['Reported_Symptoms']),
+                                            _field('HPI', data['Subjective']?['HPI']),
+                                            _listField('Meds & Allergies', data['Subjective']?['Meds_Allergies']),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -353,22 +372,41 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                     isExpanded: _expanded[1],
                                     backgroundColor: const Color(0xFFF4F9FE),
                                     headerBuilder: (context, isExpanded) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                       decoration: const BoxDecoration(
                                         color: Color(0xFFF4F9FE),
                                         borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                                       ),
-                                      child: const Text('Objective', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              'Objective',
+                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    body: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            _field('Vitals & Exam', data['Objective']?['Vitals_Exam']),
-                                          ],
+                                    body: Container(
+                                      decoration: const BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              _field('Vitals & Exam', data['Objective']?['Vitals_Exam']),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -392,23 +430,42 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                     canTapOnHeader: true,
                                     isExpanded: _expanded[2],
                                     backgroundColor: const Color(0xFFF4F9FE),
-                                    headerBuilder: (context, isExpanded) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFF4F9FE),
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                      ),
-                                      child: const Text('Assessment', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                                  headerBuilder: (context, isExpanded) => Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF4F9FE),
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                                     ),
-                                    body: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          _field('Symptom Assessment', data['Assessment']?['Symptom_Assessment']),
-                                          _field('Primary Diagnosis', data['Assessment']?['Primary_Diagnosis']),
-                                          _listField('Differentials', data['Assessment']?['Differentials']),
-                                        ],
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            'Assessment',
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                    body: Container(
+                                      decoration: const BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _field('Symptom Assessment', data['Assessment']?['Symptom_Assessment']),
+                                            _field('Primary Diagnosis', data['Assessment']?['Primary_Diagnosis']),
+                                            _listField('Differentials', data['Assessment']?['Differentials']),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -432,23 +489,42 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                     isExpanded: _expanded[3],
                                     backgroundColor: const Color(0xFFF4F9FE),
                                     headerBuilder: (context, isExpanded) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                       decoration: const BoxDecoration(
                                         color: Color(0xFFF4F9FE),
                                         borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                                       ),
-                                      child: const Text('Plan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                                    ),
-                                    body: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          _listField('Diagnostic Tests', data['Plan']?['Diagnostic_Tests']),
-                                          _listField('Therapeutics', data['Plan']?['Therapeutics']),
-                                          _listField('Education', data['Plan']?['Education']),
-                                          _field('Follow Up', data['Plan']?['FollowUp']),
+                                          Flexible(
+                                            child: Text(
+                                              'Plan',
+                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ),
                                         ],
+                                      ),
+                                    ),
+                                    body: Container(
+                                      decoration: const BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _listField('Diagnostic Tests', data['Plan']?['Diagnostic_Tests']),
+                                            _listField('Therapeutics', data['Plan']?['Therapeutics']),
+                                            _listField('Education', data['Plan']?['Education']),
+                                            _field('Follow Up', data['Plan']?['FollowUp']),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -489,34 +565,57 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
   }
 
   Widget _field(String label, dynamic value) {
-    if (value == null || (value is String && value.trim().isEmpty)) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text('$label: None', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-      );
-    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: RichText(
-        text: TextSpan(
-          text: '$label: ',
-          style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
-          children: [
-            TextSpan(
-              text: value.toString(),
-              style: const TextStyle(fontWeight: FontWeight.normal, color: Colors.black87),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return RichText(
+            text: TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
+              children: [
+                TextSpan(
+                  text: (value == null || (value is String && value.trim().isEmpty)) ? 'None' : value.toString(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    color: (value == null || (value is String && value.trim().isEmpty)) ? Colors.grey : Colors.black87,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            softWrap: true,
+          );
+        },
       ),
     );
   }
 
   Widget _listField(String label, dynamic value) {
     if (value == null || (value is List && value.isEmpty)) {
+      // Use the same style as non-empty, but 'None' in grey
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Text('$label: None', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RichText(
+              text: TextSpan(
+                text: '$label: ',
+                style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
+                children: [
+                  TextSpan(
+                    text: 'None',
+                    style: const TextStyle(fontWeight: FontWeight.normal, color: Colors.grey),
+                  ),
+                ],
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+            );
+          },
+        ),
       );
     }
     if (value is List) {
@@ -525,14 +624,14 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$label:', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text('$label:', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
             ...value.map<Widget>((item) => Padding(
                   padding: const EdgeInsets.only(left: 12, top: 2),
                   child: Row(
                     children: [
                       const Icon(Icons.circle, size: 7, color: Colors.blueAccent),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(item.toString(), style: const TextStyle(fontSize: 16))),
+                      Expanded(child: Text(item.toString(), style: const TextStyle(fontSize: 16), softWrap: true, overflow: TextOverflow.ellipsis, maxLines: 3)),
                     ],
                   ),
                 )),
