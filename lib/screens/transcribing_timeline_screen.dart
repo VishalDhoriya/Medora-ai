@@ -297,238 +297,250 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                         physics: const BouncingScrollPhysics(),
                         child: Column(
                           children: [
+                            // Subjective
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: ExpansionPanelList(
-                                elevation: 0,
-                                expandedHeaderPadding: EdgeInsets.zero,
-                                expansionCallback: (int index, bool isExpanded) {
-                                  setLocalState(() {
-                                    _expanded[index] = !_expanded[index];
-                                  });
-                                },
-                                children: [
-                                  // Subjective
-                                  ExpansionPanel(
-                                    canTapOnHeader: true,
-                                    isExpanded: _expanded[0],
-                                    backgroundColor: const Color(0xFFF4F9FE),
-                                    headerBuilder: (context, isExpanded) => Container(
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFF4F9FE),
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              'Subjective',
-                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    body: Container(
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-                                        ),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4F9FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.18), width: 1.2),
+                                ),
+                                child: ExpansionPanelList(
+                                  elevation: 0,
+                                  expandedHeaderPadding: EdgeInsets.zero,
+                                  expansionCallback: (int index, bool isExpanded) {
+                                    setLocalState(() {
+                                      _expanded[0] = !_expanded[0];
+                                    });
+                                  },
+                                  children: [
+                                    ExpansionPanel(
+                                      canTapOnHeader: true,
+                                      isExpanded: _expanded[0],
+                                      backgroundColor: Colors.transparent,
+                                      headerBuilder: (context, isExpanded) => Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            _listField('Reported Symptoms', data['Subjective']?['Reported_Symptoms']),
-                                            _field('HPI', data['Subjective']?['HPI']),
-                                            _listField('Meds & Allergies', data['Subjective']?['Meds_Allergies']),
+                                            Flexible(
+                                              child: Text(
+                                                'Subjective',
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: ExpansionPanelList(
-                                elevation: 0,
-                                expandedHeaderPadding: EdgeInsets.zero,
-                                expansionCallback: (int index, bool isExpanded) {
-                                  setLocalState(() {
-                                    _expanded[index + 1] = !_expanded[index + 1];
-                                  });
-                                },
-                                children: [
-                                  // Objective
-                                  ExpansionPanel(
-                                    canTapOnHeader: true,
-                                    isExpanded: _expanded[1],
-                                    backgroundColor: const Color(0xFFF4F9FE),
-                                    headerBuilder: (context, isExpanded) => Container(
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFF4F9FE),
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              'Objective',
-                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
+                                      body: Container(
+                                        decoration: const BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    body: Container(
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
                                         ),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              _field('Vitals & Exam', data['Objective']?['Vitals_Exam']),
+                                              _listField('Reported Symptoms', data['Subjective']?['Reported_Symptoms']),
+                                              _field('HPI', data['Subjective']?['HPI']),
+                                              _listField('Meds & Allergies', data['Subjective']?['Meds_Allergies']),
                                             ],
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
+                            // Objective
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: ExpansionPanelList(
-                                elevation: 0,
-                                expandedHeaderPadding: EdgeInsets.zero,
-                                expansionCallback: (int index, bool isExpanded) {
-                                  setLocalState(() {
-                                    _expanded[index + 2] = !_expanded[index + 2];
-                                  });
-                                },
-                                children: [
-                                  // Assessment
-                                  ExpansionPanel(
-                                    canTapOnHeader: true,
-                                    isExpanded: _expanded[2],
-                                    backgroundColor: const Color(0xFFF4F9FE),
-                                  headerBuilder: (context, isExpanded) => Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFF4F9FE),
-                                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            'Assessment',
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                    body: Container(
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-                                        ),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4F9FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.18), width: 1.2),
+                                ),
+                                child: ExpansionPanelList(
+                                  elevation: 0,
+                                  expandedHeaderPadding: EdgeInsets.zero,
+                                  expansionCallback: (int index, bool isExpanded) {
+                                    setLocalState(() {
+                                      _expanded[1] = !_expanded[1];
+                                    });
+                                  },
+                                  children: [
+                                    ExpansionPanel(
+                                      canTapOnHeader: true,
+                                      isExpanded: _expanded[1],
+                                      backgroundColor: Colors.transparent,
+                                      headerBuilder: (context, isExpanded) => Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            _field('Symptom Assessment', data['Assessment']?['Symptom_Assessment']),
-                                            _field('Primary Diagnosis', data['Assessment']?['Primary_Diagnosis']),
-                                            _listField('Differentials', data['Assessment']?['Differentials']),
+                                            Flexible(
+                                              child: Text(
+                                                'Objective',
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: ExpansionPanelList(
-                                elevation: 0,
-                                expandedHeaderPadding: EdgeInsets.zero,
-                                expansionCallback: (int index, bool isExpanded) {
-                                  setLocalState(() {
-                                    _expanded[index + 3] = !_expanded[index + 3];
-                                  });
-                                },
-                                children: [
-                                  // Plan
-                                  ExpansionPanel(
-                                    canTapOnHeader: true,
-                                    isExpanded: _expanded[3],
-                                    backgroundColor: const Color(0xFFF4F9FE),
-                                    headerBuilder: (context, isExpanded) => Container(
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFF4F9FE),
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              'Plan',
-                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
+                                      body: Container(
+                                        decoration: const BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          child: Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                _field('Vitals & Exam', data['Objective']?['Vitals_Exam']),
+                                              ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    body: Container(
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
                                         ),
                                       ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Assessment
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4F9FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.18), width: 1.2),
+                                ),
+                                child: ExpansionPanelList(
+                                  elevation: 0,
+                                  expandedHeaderPadding: EdgeInsets.zero,
+                                  expansionCallback: (int index, bool isExpanded) {
+                                    setLocalState(() {
+                                      _expanded[2] = !_expanded[2];
+                                    });
+                                  },
+                                  children: [
+                                    ExpansionPanel(
+                                      canTapOnHeader: true,
+                                      isExpanded: _expanded[2],
+                                      backgroundColor: Colors.transparent,
+                                      headerBuilder: (context, isExpanded) => Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            _listField('Diagnostic Tests', data['Plan']?['Diagnostic_Tests']),
-                                            _listField('Therapeutics', data['Plan']?['Therapeutics']),
-                                            _listField('Education', data['Plan']?['Education']),
-                                            _field('Follow Up', data['Plan']?['FollowUp']),
+                                            Flexible(
+                                              child: Text(
+                                                'Assessment',
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
+                                      body: Container(
+                                        decoration: const BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              _field('Symptom Assessment', data['Assessment']?['Symptom_Assessment']),
+                                              _field('Primary Diagnosis', data['Assessment']?['Primary_Diagnosis']),
+                                              _listField('Differentials', data['Assessment']?['Differentials']),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Plan
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4F9FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.18), width: 1.2),
+                                ),
+                                child: ExpansionPanelList(
+                                  elevation: 0,
+                                  expandedHeaderPadding: EdgeInsets.zero,
+                                  expansionCallback: (int index, bool isExpanded) {
+                                    setLocalState(() {
+                                      _expanded[3] = !_expanded[3];
+                                    });
+                                  },
+                                  children: [
+                                    ExpansionPanel(
+                                      canTapOnHeader: true,
+                                      isExpanded: _expanded[3],
+                                      backgroundColor: Colors.transparent,
+                                      headerBuilder: (context, isExpanded) => Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                'Plan',
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      body: Container(
+                                        decoration: const BoxDecoration(
+                                          border: Border(
+                                            top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              _listField('Diagnostic Tests', data['Plan']?['Diagnostic_Tests']),
+                                              _listField('Therapeutics', data['Plan']?['Therapeutics']),
+                                              _listField('Education', data['Plan']?['Education']),
+                                              _field('Follow Up', data['Plan']?['FollowUp']),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -671,78 +683,133 @@ class _TimelineStepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = LinearGradient(
-      colors: step.completed
-          ? [Colors.blueAccent, Colors.lightBlueAccent]
-          : [Colors.grey[300]!, Colors.grey[100]!],
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-    );
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
+    // Color scheme
+    final Color accent = step.completed ? Color(0xFF1976D2) : Color(0xFFB0BEC5); // blueAccent or grey
+    final Color borderColor = step.completed ? Color(0xFF1976D2) : Color(0xFFB0BEC5);
+    final Color bgColor = step.completed ? Color(0xFFF4F9FE) : Color(0xFFF7F9FB);
+
+    final bool isCollapsed = !(step.expanded && step.content != null);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isCollapsed ? 6 : 10),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!isFirst)
-              Container(width: 2, height: 16, decoration: BoxDecoration(gradient: gradient)),
             Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: step.completed ? gradient : null,
-                color: step.completed ? null : Colors.grey[300],
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey[400]!, width: 2),
-              ),
-              child: Icon(step.icon, color: Colors.white, size: 18),
-            ),
-            if (!isLast)
-              Container(width: 2, height: 32, decoration: BoxDecoration(gradient: gradient)),
-          ],
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              width: 32,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Row(
-                    children: [
-                      Text(step.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 8),
-                      if (step.duration != null)
-                        Text(
-                          '(${step.duration!.inSeconds}s)',
-                          style: const TextStyle(color: Colors.grey),
+                  // Vertical line (connects top to bottom, except for first/last)
+                  Positioned.fill(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            width: 2,
+                            color: isFirst ? Colors.transparent : borderColor.withOpacity(0.5),
+                          ),
                         ),
-                      if (step.completed && step.content != null)
-                        IconButton(
-                          icon: Icon(step.expanded ? Icons.expand_less : Icons.expand_more),
-                          onPressed: step.onToggle,
+                        Container(
+                          width: 2,
+                          height: 0, // no line below dot
                         ),
-                    ],
-                  ),
-                  if (step.expanded && step.content != null)
-                    Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.blue[50]!, Colors.blue[100]!]),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(step.content!, style: const TextStyle(fontSize: 16)),
+                        Expanded(
+                          child: Container(
+                            width: 2,
+                            color: isLast ? Colors.transparent : borderColor.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  // Dot
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: borderColor, width: 2),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.zero,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor.withOpacity(0.18), width: 1.2),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: isCollapsed ? 12 : 14,
+                    right: isCollapsed ? 6 : 14,
+                    top: isCollapsed ? 1 : 14,
+                    bottom: isCollapsed ? 1 : 14,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              step.label,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF222B45)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (step.duration != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(
+                                '(${step.duration!.inSeconds}s)',
+                                style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12),
+                              ),
+                            ),
+                          if (step.completed && step.content != null)
+                            IconButton(
+                              icon: Icon(step.expanded ? Icons.expand_less : Icons.expand_more, color: Color(0xFF90A4AE)),
+                              onPressed: step.onToggle,
+                              splashRadius: 18,
+                            ),
+                        ],
+                      ),
+                      if (step.expanded && step.content != null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: borderColor.withOpacity(0.10)),
+                          ),
+                          child: SelectableText(
+                            step.content!,
+                            style: const TextStyle(fontSize: 15, color: Color(0xFF222B45)),
+                            minLines: 1,
+                            maxLines: 8,
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
