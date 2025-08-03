@@ -55,7 +55,8 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
   bool _llmDone = false;
   bool _showTranscript = false;
   bool _showLlm = false;
-  bool _showSystemThoughts = false;
+  bool _showSystemThoughts = true; // Always show from start
+  bool _systemThoughtsExpanded = true; // Start expanded during process
   Duration? _transcribeDuration;
   Duration? _llmDuration;
   DateTime? _stepStart;
@@ -162,6 +163,16 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
         
         print('🔄 State updated. _llmDone=$_llmDone, _llmResponse length=${_llmResponse?.length}, _parsedLlmJson=$_parsedLlmJson');
         
+        // Auto-collapse System Thoughts when both processes are complete
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _systemThoughtsExpanded = false; // Collapse when complete
+            });
+            print('🔄 Auto-collapsed System Thoughts when complete');
+          }
+        });
+        
         // Cancel subscription after processing
         sub?.cancel();
       } else {
@@ -197,44 +208,25 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ Building UI - _transcribeDone=$_transcribeDone, _llmDone=$_llmDone, _parsedLlmJson=${_parsedLlmJson != null}');
+    print('🏗️ Building UI - _transcribeDone=$_transcribeDone, _llmDone=$_llmDone, _showSystemThoughts=$_showSystemThoughts, _systemThoughtsExpanded=$_systemThoughtsExpanded, _parsedLlmJson=${_parsedLlmJson != null}');
 
     final steps = <_StepData>[
-      // Show individual steps only while they're in progress
-      if (!(_transcribeDone && _llmDone)) ...[
-        _StepData(
-          label: 'Transcription',
-          icon: Icons.mic,
-          completed: _transcribeDone,
-          duration: _transcribeDone ? _transcribeDuration : _liveTranscribe,
-          content: _transcribeDone ? _transcript : 'Transcribing...',
-          expanded: _showTranscript,
-          onToggle: () => setState(() => _showTranscript = !_showTranscript),
-        ),
-        _StepData(
-          label: 'LLM Analysis',
-          icon: Icons.auto_awesome,
-          completed: _llmDone,
-          duration: _llmDone ? _llmDuration : _liveLlm,
-          content: _llmDone ? (_llmResponse ?? 'No response.') : 'Analyzing...',
-          expanded: _showLlm,
-          onToggle: () => setState(() => _showLlm = !_showLlm),
-        ),
-      ] else
-        // Show System Thoughts when both processes are complete
-        _StepData(
-          label: 'System Thoughts',
-          icon: Icons.psychology,
-          completed: true,
-          duration: _getCumulativeDuration(),
-          content: _buildSystemThoughtsContent(),
-          expanded: _showSystemThoughts,
-          onToggle: () => setState(() => _showSystemThoughts = !_showSystemThoughts),
-          customExpandedContent: _buildSystemThoughtsExpandedContent(),
-        ),
+      // Always show System Thoughts
+      _StepData(
+        label: 'System Thoughts',
+        icon: Icons.psychology,
+        completed: _llmDone, // Completed when LLM is done
+        duration: _getCumulativeDuration(),
+        content: _buildSystemThoughtsContent(),
+        expanded: _systemThoughtsExpanded, // Use separate expansion state
+        onToggle: () => setState(() => _systemThoughtsExpanded = !_systemThoughtsExpanded), // Toggle expansion
+        customExpandedContent: _buildSystemThoughtsExpandedContent(),
+      ),
     ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Review & Edit')),
+      appBar: AppBar(
+        title: const Text('Review & Edit'),
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -285,45 +277,55 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
   }
 
   String _buildSystemThoughtsContent() {
-    // This will be used to show both transcription and LLM analysis in expandable format
-    return 'Click to view transcription and analysis details';
+    if (!_transcribeDone) {
+      return 'Converting speech to text...';
+    } else if (!_llmDone) {
+      return 'Analyzing medical content and generating insights...';
+    } else {
+      return 'All processes complete. Click to view details.';
+    }
   }
 
   Widget _buildSystemThoughtsExpandedContent() {
     return Column(
       children: [
-        // Mini Timeline inside System Thoughts
+        // Mini Timeline inside System Thoughts - show steps progressively
         Column(
           children: [
-            // Transcription Timeline Item
+            // Always show Transcription Timeline Item
             _buildMiniTimelineItem(
               label: 'Transcription',
               icon: Icons.mic,
-              duration: _transcribeDuration,
-              content: _transcript ?? 'No transcription available.',
+              duration: _transcribeDone ? _transcribeDuration : _liveTranscribe,
+              content: _transcribeDone ? (_transcript ?? 'No transcription available.') : 'Converting speech to text...',
               isFirst: true,
-              isLast: false,
+              isLast: !_transcribeDone, // Last if transcription not done yet
+              isCompleted: _transcribeDone,
             ),
             
-            // LLM Analysis Timeline Item
-            _buildMiniTimelineItem(
-              label: 'LLM Analysis',
-              icon: Icons.auto_awesome,
-              duration: _llmDuration,
-              content: _llmResponse ?? 'No LLM analysis available.',
-              isFirst: false,
-              isLast: false,
-            ),
+            // Only show LLM Analysis after transcription is done
+            if (_transcribeDone)
+              _buildMiniTimelineItem(
+                label: 'LLM Analysis',
+                icon: Icons.auto_awesome,
+                duration: _llmDone ? _llmDuration : _liveLlm,
+                content: _llmDone ? (_llmResponse ?? 'No LLM analysis available.') : 'Analyzing medical content and generating insights...',
+                isFirst: false,
+                isLast: !_llmDone, // Last if LLM not done yet
+                isCompleted: _llmDone,
+              ),
 
-            // SOAP Note Generation Timeline Item
-            _buildMiniTimelineItem(
-              label: 'SOAP Note Generation',
-              icon: Icons.description,
-              duration: null, // No time display
-              content: 'SOAP note generated successfully from analysis.',
-              isFirst: false,
-              isLast: true, // No line below this step
-            ),
+            // Only show SOAP Note Generation after LLM is done
+            if (_llmDone)
+              _buildMiniTimelineItem(
+                label: 'SOAP Note Generation',
+                icon: Icons.description,
+                duration: null, // No time display
+                content: 'SOAP note generated successfully from analysis.',
+                isFirst: false,
+                isLast: true, // Always last step
+                isCompleted: _llmDone,
+              ),
           ],
         ),
       ],
@@ -337,10 +339,11 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
     required String content,
     required bool isFirst,
     required bool isLast,
+    required bool isCompleted,
   }) {
-    const Color accent = Color(0xFF1976D2);
-    const Color borderColor = Color(0xFF1976D2);
-    const Color bgColor = Color(0xFFF4F9FE);
+    final Color accent = isCompleted ? Color(0xFF1976D2) : Color(0xFF757575);
+    final Color borderColor = isCompleted ? Color(0xFF1976D2) : Color(0xFF757575);
+    final Color bgColor = isCompleted ? Color(0xFFF4F9FE) : Color(0xFFF5F5F5);
 
     return Padding(
       padding: EdgeInsets.zero,
@@ -1100,12 +1103,11 @@ class _TimelineStepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Color scheme
-    final Color accent = step.completed ? Color(0xFF1976D2) : Color(0xFFB0BEC5); // blueAccent or grey
-    final Color borderColor = step.completed ? Color(0xFF1976D2) : Color(0xFFB0BEC5);
-    final Color bgColor = step.completed ? Color(0xFFF4F9FE) : Color(0xFFF7F9FB);
+    // Color scheme - make in-progress and completed cards more consistent
+    final Color accent = step.completed ? Color(0xFF1976D2) : Color(0xFF757575); // Blue or darker grey
+    final Color borderColor = step.completed ? Color(0xFF1976D2) : Color(0xFF757575); // Consistent with accent
+    final Color bgColor = step.completed ? Color(0xFFF4F9FE) : Color(0xFFF5F5F5); // Light blue or light grey
 
-    final bool isCollapsed = !(step.expanded && (step.content != null || step.customExpandedContent != null));
     final bool isSystemThoughts = step.label == 'System Thoughts';
     
     return Padding(
@@ -1121,16 +1123,26 @@ class _TimelineStepCard extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Full vertical line (except for first/last)
-                    if (!(isFirst && isLast))
-                      Positioned.fill(
+                    // Connecting line from top (for non-first items)
+                    if (!isFirst)
+                      Positioned(
+                        top: 0,
+                        height: 9, // Half of the 18px dot position
+                        left: 15, // Center the line (32/2 - 1)
                         child: Container(
                           width: 2,
-                          color: isFirst 
-                            ? Colors.transparent 
-                            : isLast 
-                              ? borderColor.withOpacity(0.8)
-                              : borderColor.withOpacity(0.8), // Continuous connection
+                          color: borderColor.withOpacity(0.8),
+                        ),
+                      ),
+                    // Connecting line to bottom (for non-last items)
+                    if (!isLast)
+                      Positioned(
+                        top: 9, // From center of dot
+                        bottom: 0,
+                        left: 15, // Center the line (32/2 - 1)
+                        child: Container(
+                          width: 2,
+                          color: borderColor.withOpacity(0.8),
                         ),
                       ),
                     // Dot
@@ -1153,19 +1165,14 @@ class _TimelineStepCard extends StatelessWidget {
             if (!isSystemThoughts) const SizedBox(width: 8),
             Expanded(
               child: Container(
-                margin: EdgeInsets.symmetric(vertical: isCollapsed ? 4 : 6), // Small margin for card spacing
+                margin: const EdgeInsets.symmetric(vertical: 6), // Consistent margin for all cards
                 decoration: BoxDecoration(
                   color: bgColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderColor.withOpacity(0.18), width: 1.2),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    left: isCollapsed ? 12 : 14,
-                    right: isCollapsed ? 6 : 14,
-                    top: isCollapsed ? 1 : 14,
-                    bottom: isCollapsed ? 1 : 14,
-                  ),
+                  padding: const EdgeInsets.all(14), // Consistent padding for all cards
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1188,7 +1195,7 @@ class _TimelineStepCard extends StatelessWidget {
                                 style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12),
                               ),
                             ),
-                          if (step.completed && step.content != null)
+                          if (step.completed && step.content != null && step.onToggle != null)
                             IconButton(
                               icon: Icon(step.expanded ? Icons.expand_less : Icons.expand_more, color: Color(0xFF90A4AE)),
                               onPressed: step.onToggle,
