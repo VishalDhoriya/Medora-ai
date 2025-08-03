@@ -268,11 +268,8 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
         ),
       );
     }
-    final data = json['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      return const Text('No extracted data.', style: TextStyle(color: Colors.red));
-    }
-    final List<String> sections = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+    // Flat format: fields are at the top level
+    final data = json;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -284,7 +281,7 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
           const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
-              final _expanded = List<bool>.filled(sections.length, true);
+              final _expanded = List<bool>.filled(4, true);
               return StatefulBuilder(
                 builder: (context, setLocalState) {
                   return SizedBox(
@@ -346,9 +343,9 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              _listField('Reported Symptoms', data['Subjective']?['Reported_Symptoms']),
-                                              _field('HPI', data['Subjective']?['HPI']),
-                                              _listField('Meds & Allergies', data['Subjective']?['Meds_Allergies']),
+                                              _listField('Reported Symptoms', data['Reported_Symptoms']),
+                                              _field('HPI', data['HPI']),
+                                              _listField('Meds & Allergies', data['Meds_Allergies']),
                                             ],
                                           ),
                                         ),
@@ -409,7 +406,7 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                _field('Vitals & Exam', data['Objective']?['Vitals_Exam']),
+                                                _field('Vitals & Exam', data['Vitals_Exam']),
                                               ],
                                             ),
                                           ),
@@ -469,9 +466,9 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              _field('Symptom Assessment', data['Assessment']?['Symptom_Assessment']),
-                                              _field('Primary Diagnosis', data['Assessment']?['Primary_Diagnosis']),
-                                              _listField('Differentials', data['Assessment']?['Differentials']),
+                                              _field('Symptom Assessment', data['Symptom_Assessment']),
+                                              _field('Primary Diagnosis', data['Primary_Diagnosis']),
+                                              _listField('Differentials', data['Differentials']),
                                             ],
                                           ),
                                         ),
@@ -530,10 +527,10 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              _listField('Diagnostic Tests', data['Plan']?['Diagnostic_Tests']),
-                                              _listField('Therapeutics', data['Plan']?['Therapeutics']),
-                                              _listField('Education', data['Plan']?['Education']),
-                                              _field('Follow Up', data['Plan']?['FollowUp']),
+                                              _listField('Diagnostic Tests', data['Diagnostic_Tests']),
+                                              _listField('Therapeutics', data['Therapeutics']),
+                                              _listField('Education', data['Education']),
+                                              _field('Follow Up', data['FollowUp']),
                                             ],
                                           ),
                                         ),

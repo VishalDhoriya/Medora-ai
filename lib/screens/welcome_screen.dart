@@ -205,29 +205,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
       }
     },
-    "output_template": {
+      "output_template": {
       "extraction_success": true,
-      "data": {
-        "Subjective": {
-          "Reported_Symptoms": [],
-          "HPI": null,
-          "Meds_Allergies": []
-        },
-        "Objective": {
-          "Vitals_Exam": null
-        },
-        "Assessment": {
-          "Symptom_Assessment": null,
-          "Primary_Diagnosis": null,
-          "Differentials": []
-        },
-        "Plan": {
-          "Diagnostic_Tests": [],
-          "Therapeutics": [],
-          "Education": [],
-          "FollowUp": null
-        }
-      }
+      "Reported_Symptoms": [],
+      "HPI": null,
+      "Meds_Allergies": [],
+      "Vitals_Exam": null,
+      "Symptom_Assessment": null,
+      "Primary_Diagnosis": null,
+      "Differentials": [],
+      "Diagnostic_Tests": [],
+      "Therapeutics": [],
+      "Education": [],
+      "FollowUp": null
     }
   }
 }""";
