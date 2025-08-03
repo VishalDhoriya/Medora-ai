@@ -320,14 +320,14 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                       isExpanded: _expanded[0],
                                       backgroundColor: Colors.transparent,
                                       headerBuilder: (context, isExpanded) => Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Flexible(
                                               child: Text(
                                                 'Subjective',
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 1,
                                               ),
@@ -381,14 +381,14 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                       isExpanded: _expanded[1],
                                       backgroundColor: Colors.transparent,
                                       headerBuilder: (context, isExpanded) => Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Flexible(
                                               child: Text(
                                                 'Objective',
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 1,
                                               ),
@@ -443,14 +443,14 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                       isExpanded: _expanded[2],
                                       backgroundColor: Colors.transparent,
                                       headerBuilder: (context, isExpanded) => Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Flexible(
                                               child: Text(
                                                 'Assessment',
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 1,
                                               ),
@@ -504,14 +504,14 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                                       isExpanded: _expanded[3],
                                       backgroundColor: Colors.transparent,
                                       headerBuilder: (context, isExpanded) => Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Flexible(
                                               child: Text(
                                                 'Plan',
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 1,
                                               ),
