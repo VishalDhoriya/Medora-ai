@@ -700,29 +700,31 @@ class _TimelineStepCard extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Vertical line (connects top to bottom, except for first/last)
-                  Positioned.fill(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            width: 2,
-                            color: isFirst ? Colors.transparent : borderColor.withOpacity(0.5),
+                  // Full vertical line (except for first/last)
+                  if (!(isFirst && isLast))
+                    Positioned.fill(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              width: 2,
+                              color: isFirst ? Colors.transparent : borderColor.withOpacity(0.5),
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 2,
-                          height: 0, // no line below dot
-                        ),
-                        Expanded(
-                          child: Container(
+                          Container(
                             width: 2,
-                            color: isLast ? Colors.transparent : borderColor.withOpacity(0.5),
+                            height: 18,
+                            color: borderColor.withOpacity(0.5),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: Container(
+                              width: 2,
+                              color: isLast ? Colors.transparent : borderColor.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   // Dot
                   Align(
                     alignment: Alignment.center,
