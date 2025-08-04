@@ -8,10 +8,14 @@ import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
+import '../services/database_service.dart';
 import '../services/llm_service.dart';
 import '../services/model_config_service.dart';
 import 'settings_screen.dart';
-// import 'patient_form_screen.dart';
+import 'welcome/widgets/welcome_message.dart';
+import 'welcome/widgets/patient_form.dart';
+import 'welcome/widgets/patient_info_and_recording.dart';
+
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -24,12 +28,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   int _recordDuration = 0;
   Timer? _timer;
   String? _userName;
-  String? _selectedModel;
-  bool _modelInitialized = false;
 
   // Patient state
   Map<String, dynamic>? _patient;
   bool _showPatientForm = false;
+  
+  // Previous conversations
+  List<CompleteConversationData> _previousConversations = [];
+  bool _loadingConversations = false;
+  
+  // Previous patients
+  List<PatientData> _previousPatients = [];
+  bool _loadingPatients = false;
 
   // Recording state
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -50,6 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.initState();
     print("✅ initState reached!");
     _loadUserAndModel();
+    _loadPreviousPatients();
     transcriber = RealTimeTranscriber(
       Whisper(
         model: WhisperModel.baseQ8,
@@ -77,11 +88,63 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final model = prefs.getString('onboard_model');
     setState(() {
       _userName = name;
-      _selectedModel = model;
     });
     if (model != null && model.isNotEmpty) {
       await _initializeModel(model);
     }
+  }
+
+  Future<void> _loadPreviousConversations(int patientId) async {
+    setState(() {
+      _loadingConversations = true;
+    });
+    
+    try {
+      final conversations = await DatabaseService.getPatientConversationHistory(patientId);
+      setState(() {
+        _previousConversations = conversations;
+        _loadingConversations = false;
+      });
+    } catch (e) {
+      print('Error loading conversations: $e');
+      setState(() {
+        _loadingConversations = false;
+      });
+    }
+  }
+
+  Future<void> _loadPreviousPatients() async {
+    setState(() {
+      _loadingPatients = true;
+    });
+    
+    try {
+      final patients = await DatabaseService.getAllPatients();
+      setState(() {
+        _previousPatients = patients;
+        _loadingPatients = false;
+      });
+    } catch (e) {
+      print('Error loading patients: $e');
+      setState(() {
+        _loadingPatients = false;
+      });
+    }
+  }
+
+  void _selectExistingPatient(PatientData patient) {
+    setState(() {
+      _patient = {
+        'id': patient.id!,
+        'name': patient.name,
+        'dob': patient.dob,
+        'gender': patient.gender,
+        'address': patient.address ?? '',
+        'isExistingPatient': true, // Flag to indicate this is an existing patient
+      };
+    });
+    // Load previous conversations for this patient
+    _loadPreviousConversations(patient.id!);
   }
 
   Future<void> _initializeModel(String modelName) async {
@@ -95,13 +158,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final directory = await getExternalStorageDirectory();
     final modelPath =
         '${directory!.path}/${config.modelDir}/${config.version}/${config.modelFile}';
-    final success = await LlmService.initializeModel(
+    await LlmService.initializeModel(
       config: config,
       modelPath: modelPath,
     );
-    setState(() {
-      _modelInitialized = success;
-    });
+    // Model initialized successfully
   }
 
   void _openSettings() async {
@@ -112,6 +173,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Create a conversation record when starting recording
+    if (_patient != null) {
+      final conversationId = await DatabaseService.insertConversation(ConversationData(
+        patientId: _patient!['id'],
+        title: 'Medical Consultation - ${DateTime.now().toString().split(' ')[0]}',
+      ));
+      // Store conversation ID in patient data for later use
+      _patient!['currentConversationId'] = conversationId;
+    }
+    
     transcriber.start();
     setState(() {
       _isRecording = true;
@@ -301,11 +372,42 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     // Show patient form or recording controls
                     if (_showPatientForm)
-                      _buildPatientForm()
+                      PatientForm(
+                        onPatientCreated: (patientData) {
+                          setState(() {
+                            _patient = patientData;
+                            _showPatientForm = false;
+                          });
+                          _loadPreviousConversations(patientData['id']);
+                        },
+                        onCancel: () {
+                          setState(() {
+                            _showPatientForm = false;
+                          });
+                        },
+                      )
                     else if (_patient != null)
-                      _buildPatientInfoAndRecording()
+                      PatientInfoAndRecording(
+                        patient: _patient!,
+                        isRecording: _isRecording,
+                        isPaused: _isPaused,
+                        isTranscribing: _isTranscribing,
+                        recordDuration: _recordDuration,
+                        transcribeDotCount: _transcribeDotCount,
+                        transcript: _transcript,
+                        previousConversations: _previousConversations,
+                        loadingConversations: _loadingConversations,
+                        onStartRecording: _startRecording,
+                        onPauseRecording: _pauseRecording,
+                        onResumeRecording: _resumeRecording,
+                        onStopRecording: _stopRecording,
+                      )
                     else
-                      _buildWelcomeMessage(),
+                      WelcomeMessage(
+                        previousPatients: _previousPatients,
+                        loadingPatients: _loadingPatients,
+                        onSelectPatient: _selectExistingPatient,
+                      ),
                   ],
                 ),
               ),
@@ -337,637 +439,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
       ) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
-  }
-
-  Widget _buildWelcomeMessage() {
-    return Center(
-      child: const Column(
-        children: [
-          Text(
-            'Please add a new patient to start',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPatientForm() {
-    final nameController = TextEditingController();
-    final dobController = TextEditingController();
-    final addressController = TextEditingController();
-    String selectedGender = 'Male';
-
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Patient Information',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1976D2),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          
-          // Name Field
-          TextFormField(
-            controller: nameController,
-            decoration: InputDecoration(
-              labelText: 'Full Name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.person),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // DOB Field
-          TextFormField(
-            controller: dobController,
-            readOnly: true,
-            decoration: InputDecoration(
-              labelText: 'Date of Birth',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.cake),
-              hintText: 'YYYY-MM-DD',
-            ),
-            onTap: () async {
-              DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime(2000, 1, 1),
-                firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
-              );
-              if (picked != null) {
-                dobController.text = "${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-              }
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Gender Field
-          StatefulBuilder(
-            builder: (context, setModalState) => DropdownButtonFormField<String>(
-              value: selectedGender,
-              decoration: InputDecoration(
-                labelText: 'Gender',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.person_outline),
-              ),
-              items: ['Male', 'Female', 'Other'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setModalState(() {
-                  selectedGender = newValue!;
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Address Field
-          TextFormField(
-            controller: addressController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Address',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              prefixIcon: const Icon(Icons.location_on),
-            ),
-          ),
-          const SizedBox(height: 32),
-          
-          // Start Conversation Button
-          SizedBox(
-            height: 54,
-            child: ElevatedButton(
-              onPressed: () {
-              if (nameController.text.isNotEmpty && 
-                  dobController.text.isNotEmpty) {
-                setState(() {
-                  _patient = {
-                    'name': nameController.text,
-                    'dob': dobController.text,
-                    'gender': selectedGender,
-                    'address': addressController.text,
-                  };
-                  _showPatientForm = false;
-                });
-                // Start recording immediately
-                _startRecording();
-              }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1976D2),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: const StadiumBorder(),
-                minimumSize: const Size(0, 54),
-                maximumSize: const Size(220, 54),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'Start Conversation',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Icon(Icons.arrow_forward, size: 20),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Cancel Button
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _showPatientForm = false;
-              });
-            },
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPatientInfoAndRecording() {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String durationText =
-        '${twoDigits(_recordDuration ~/ 60)}:${twoDigits(_recordDuration % 60)}';
-    String transcribingText = 'Transcribing${'.' * _transcribeDotCount}';
-
-    int? _calculateAge(String dob) {
-      try {
-        final parts = dob.split('-');
-        if (parts.length != 3) return null;
-        final year = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final day = int.parse(parts[2]);
-        final birthDate = DateTime(year, month, day);
-        final today = DateTime.now();
-        int age = today.year - birthDate.year;
-        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
-          age--;
-        }
-        return age;
-      } catch (_) {
-        return null;
-      }
-    }
-    return Column(
-      children: [
-        // Enhanced Patient Header Card - Larger during recording
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFF1976D2).withOpacity(0.15),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1976D2).withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                // Larger Patient Avatar
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1976D2).withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      _patient!['name'].toString().substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(width: 20),
-                
-                // Patient Info - Larger fonts
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _patient!['name'],
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
-                          letterSpacing: -0.5,
-                          height: 1.2,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${_calculateAge(_patient!['dob']) ?? '-'} years old • ${_patient!['gender']}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Recording Controls
-        if (_isTranscribing)
-          Column(
-            children: [
-              Text(
-                transcribingText,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const CircularProgressIndicator(),
-            ],
-          )
-        else if (_transcript != null)
-          const Column(
-            children: [
-              Text(
-                '',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ],
-          )
-        else if (!_isRecording)
-          const SizedBox(height: 24) // Just show spacing when patient is added but not recording
-        else ...[
-          Text(
-            durationText,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: _isPaused ? _resumeRecording : _pauseRecording,
-                child: Container(
-                  width: 62,
-                  height: 62,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade400, Colors.blue.shade700],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.shade200,
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      _isPaused ? Icons.play_arrow : Icons.pause,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 28),
-              GestureDetector(
-                onTap: _stopRecording,
-                child: Container(
-                  width: 62,
-                  height: 62,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.red.shade400, Colors.red.shade700],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.shade200,
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.stop, color: Colors.white, size: 32),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(_isPaused ? 'Recording paused...' : 'Recording...'),
-        ],
-      ],
-    );
-  }
-
-  // Compact Patient Header Widget for transcribing page
-  Widget buildCompactPatientHeader(Map<String, dynamic> patient, {bool showDropdown = true}) {
-    bool _isExpanded = false;
-    
-    int? calculateAge(String dob) {
-      try {
-        final parts = dob.split('-');
-        if (parts.length != 3) return null;
-        final year = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final day = int.parse(parts[2]);
-        final birthDate = DateTime(year, month, day);
-        final today = DateTime.now();
-        int age = today.year - birthDate.year;
-        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
-          age--;
-        }
-        return age;
-      } catch (_) {
-        return null;
-      }
-    }
-
-    return StatefulBuilder(
-      builder: (context, setState) => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF1976D2).withOpacity(0.1),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF1976D2).withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Main header row
-            InkWell(
-              onTap: showDropdown ? () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              } : null,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    // Compact Avatar
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          patient['name'].toString().substring(0, 1).toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 12),
-                    
-                    // Compact Patient Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            patient['name'],
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A),
-                              height: 1.1,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${calculateAge(patient['dob']) ?? '-'} years • ${patient['gender']}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                              height: 1.1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Dropdown arrow
-                    if (showDropdown)
-                      Icon(
-                        _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: Colors.grey[600],
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Expanded details
-            if (_isExpanded && showDropdown)
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Divider
-                    Container(
-                      height: 1,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.transparent,
-                            Colors.grey.withOpacity(0.3),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    // DOB
-                    if (patient['dob'] != null && patient['dob'].isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.cake_outlined,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Date of Birth: ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            Text(
-                              patient['dob'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    
-                    // Address
-                    if (patient['address'] != null && patient['address'].isNotEmpty)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Address: ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              patient['address'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
