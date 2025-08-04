@@ -4,7 +4,7 @@ import '../utils/welcome_utils.dart';
 import 'soap_analysis_section.dart';
 import 'conversation_card.dart';
 
-class PatientInfoAndRecording extends StatelessWidget {
+class PatientInfoAndRecording extends StatefulWidget {
   final Map<String, dynamic> patient;
   final bool isRecording;
   final bool isPaused;
@@ -39,21 +39,28 @@ class PatientInfoAndRecording extends StatelessWidget {
   });
 
   @override
+  State<PatientInfoAndRecording> createState() => _PatientInfoAndRecordingState();
+}
+
+class _PatientInfoAndRecordingState extends State<PatientInfoAndRecording> {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    String durationText = WelcomeUtils.formatRecordingDuration(recordDuration);
-    String transcribingText = 'Transcribing${'.' * transcribeDotCount}';
+    String durationText = WelcomeUtils.formatRecordingDuration(widget.recordDuration);
+    String transcribingText = 'Transcribing${'.' * widget.transcribeDotCount}';
 
     return SingleChildScrollView(
       child: Column(
         children: [
           // Back button row
-          if (onBack != null)
+          if (widget.onBack != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   TextButton.icon(
-                    onPressed: onBack,
+                    onPressed: widget.onBack,
                     icon: const Icon(Icons.arrow_back, size: 20),
                     label: const Text('Back to Welcome'),
                     style: TextButton.styleFrom(
@@ -71,17 +78,17 @@ class PatientInfoAndRecording extends StatelessWidget {
           const SizedBox(height: 24),
           
           // Recording Controls
-          if (isTranscribing)
+          if (widget.isTranscribing)
             _buildTranscribingState(transcribingText)
-          else if (transcript != null)
+          else if (widget.transcript != null)
             _buildTranscriptState()
-          else if (!isRecording)
+          else if (!widget.isRecording)
             _buildIdleState()
           else
             _buildRecordingState(durationText),
           
           // Previous Conversations Section
-          if (!isRecording && previousConversations.isNotEmpty)
+          if (!widget.isRecording && widget.previousConversations.isNotEmpty)
             _buildPreviousConversations(),
         ],
       ),
@@ -107,75 +114,192 @@ class PatientInfoAndRecording extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Row(
-          children: [
-            // Patient Avatar
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1976D2).withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+      child: Column(
+        children: [
+          // Main header row - now clickable
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  // Patient Avatar
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1976D2).withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.patient['name'].toString().substring(0, 1).toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 20),
+                  
+                  // Patient Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.patient['name'],
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A1A),
+                            letterSpacing: -0.5,
+                            height: 1.2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${WelcomeUtils.calculateAge(widget.patient['dob']) ?? '-'} years old • ${widget.patient['gender']}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Dropdown arrow
+                  Icon(
+                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.grey[600],
+                    size: 24,
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  patient['name'].toString().substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+            ),
+          ),
+          
+          // Expanded details
+          if (_isExpanded)
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
-            ),
-            
-            const SizedBox(width: 20),
-            
-            // Patient Info
-            Expanded(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    patient['name'],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A1A),
-                      letterSpacing: -0.5,
-                      height: 1.2,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${WelcomeUtils.calculateAge(patient['dob']) ?? '-'} years old • ${patient['gender']}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
+                  // Divider
+                  Container(
+                    height: 1,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.grey.withOpacity(0.3),
+                          Colors.transparent,
+                        ],
+                      ),
                     ),
                   ),
+                  
+                  // DOB
+                  if (widget.patient['dob'] != null && widget.patient['dob'].toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cake_outlined,
+                            size: 18,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Date of Birth: ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            widget.patient['dob'].toString(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
+                  // Address
+                  if (widget.patient['address'] != null && widget.patient['address'].toString().isNotEmpty)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 18,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Address: ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            widget.patient['address'].toString(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -209,16 +333,16 @@ class PatientInfoAndRecording extends StatelessWidget {
 
   Widget _buildIdleState() {
     // Show SOAP analysis for existing patients, mic button for new patients
-    if (patient['isExistingPatient'] == true) {
+    if (widget.patient['isExistingPatient'] == true) {
       return SoapAnalysisSection(
-        previousConversations: previousConversations,
-        onStartRecording: onStartRecording,
+        previousConversations: widget.previousConversations,
+        onStartRecording: widget.onStartRecording,
       );
     } else {
       return Column(
         children: [
           GestureDetector(
-            onTap: onStartRecording,
+            onTap: widget.onStartRecording,
             child: Container(
               width: 80,
               height: 80,
@@ -268,7 +392,7 @@ class PatientInfoAndRecording extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             GestureDetector(
-              onTap: isPaused ? onResumeRecording : onPauseRecording,
+              onTap: widget.isPaused ? widget.onResumeRecording : widget.onPauseRecording,
               child: Container(
                 width: 62,
                 height: 62,
@@ -289,7 +413,7 @@ class PatientInfoAndRecording extends StatelessWidget {
                 ),
                 child: Center(
                   child: Icon(
-                    isPaused ? Icons.play_arrow : Icons.pause,
+                    widget.isPaused ? Icons.play_arrow : Icons.pause,
                     color: Colors.white,
                     size: 32,
                   ),
@@ -298,7 +422,7 @@ class PatientInfoAndRecording extends StatelessWidget {
             ),
             const SizedBox(width: 28),
             GestureDetector(
-              onTap: onStopRecording,
+              onTap: widget.onStopRecording,
               child: Container(
                 width: 62,
                 height: 62,
@@ -325,7 +449,7 @@ class PatientInfoAndRecording extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Text(isPaused ? 'Recording paused...' : 'Recording...'),
+        Text(widget.isPaused ? 'Recording paused...' : 'Recording...'),
       ],
     );
   }
@@ -355,7 +479,7 @@ class PatientInfoAndRecording extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${previousConversations.length}',
+                '${widget.previousConversations.length}',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[500],
@@ -366,7 +490,7 @@ class PatientInfoAndRecording extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        if (loadingConversations)
+        if (widget.loadingConversations)
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
@@ -374,7 +498,7 @@ class PatientInfoAndRecording extends StatelessWidget {
             ),
           )
         else
-          ...(previousConversations.take(3).map((conversation) => 
+          ...(widget.previousConversations.take(3).map((conversation) => 
               ConversationCard(
                 conversation: conversation,
                 onTap: () {

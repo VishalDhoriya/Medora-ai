@@ -120,9 +120,9 @@ class _CompactPatientHeaderState extends State<CompactPatientHeader> {
           if (_isExpanded)
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
                 ),
