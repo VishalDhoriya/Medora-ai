@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../../services/pdf_generator_service.dart';
 
 class EditableSoapSummary extends StatefulWidget {
   final Map<String, dynamic> json;
   final ScrollController soapScrollController;
   final Function(Map<String, dynamic>) onSave;
+  final Map<String, dynamic>? patient;
   
   const EditableSoapSummary({
     super.key,
     required this.json,
     required this.soapScrollController,
     required this.onSave,
+    this.patient,
   });
 
   @override
@@ -96,16 +99,150 @@ class _EditableSoapSummaryState extends State<EditableSoapSummary> {
     widget.onSave(_editableData);
   }
 
-  void _generateSummary() {
-    // TODO: Implement AI summary generation
-    // This could call an API to generate a medical summary
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating medical summary... (Feature coming soon)'),
-        backgroundColor: Color(0xFF1976D2),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  void _generateSummary() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Extract patient information
+      final patient = widget.patient ?? {};
+
+      // Prepare SOAP data from current form values
+      final soapData = {
+        'HPI': _controllers['HPI']?.text ?? '',
+        'Reported_Symptoms': _listControllers['Reported_Symptoms']?.map((c) => c.text).toList() ?? [],
+        'Vitals_Exam': _controllers['Vitals_Exam']?.text ?? '',
+        'Meds_Allergies': _listControllers['Meds_Allergies']?.map((c) => c.text).toList() ?? [],
+        'Symptom_Assessment': _controllers['Symptom_Assessment']?.text ?? '',
+        'Differentials': _listControllers['Differentials']?.map((c) => c.text).toList() ?? [],
+        'Primary_Diagnosis': _controllers['Primary_Diagnosis']?.text ?? '',
+        'Diagnostic_Tests': _listControllers['Diagnostic_Tests']?.map((c) => c.text).toList() ?? [],
+        'Therapeutics': _listControllers['Therapeutics']?.map((c) => c.text).toList() ?? [],
+        'Education': _listControllers['Education']?.map((c) => c.text).toList() ?? [],
+        'FollowUp': _controllers['FollowUp']?.text ?? '',
+      };
+
+      // Generate and share PDF (with fallback to save)
+      bool success = false;
+      try {
+        success = await PdfGeneratorService.generateAndShareMedicalReport(
+          soapData: soapData,
+          patientData: patient,
+        );
+      } catch (e) {
+        print('Share failed, trying to save: $e');
+        // Fallback to just saving the PDF
+        success = await PdfGeneratorService.generateAndSaveMedicalReport(
+          soapData: soapData,
+          patientData: patient,
+        );
+      }
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      if (!success) {
+        // Show error message only if sharing failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to share PDF report. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      // No success message - sharing dialog will handle user feedback
+    } catch (e) {
+      // Hide loading indicator if still showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error generating PDF: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _previewReport() async {
+    // Validate patient data
+    if (widget.patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information is required for PDF preview.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Get current data from controllers
+      final Map<String, dynamic> patient = Map<String, dynamic>.from(widget.patient!);
+      final Map<String, dynamic> soapData = {
+        'Reported_Symptoms': _listControllers['Reported_Symptoms']?.map((c) => c.text).toList() ?? [],
+        'HPI': _controllers['HPI']?.text ?? '',
+        'Vitals_Exam': _controllers['Vitals_Exam']?.text ?? '',
+        'Meds_Allergies': _listControllers['Meds_Allergies']?.map((c) => c.text).toList() ?? [],
+        'Symptom_Assessment': _controllers['Symptom_Assessment']?.text ?? '',
+        'Differentials': _listControllers['Differentials']?.map((c) => c.text).toList() ?? [],
+        'Primary_Diagnosis': _controllers['Primary_Diagnosis']?.text ?? '',
+        'Diagnostic_Tests': _listControllers['Diagnostic_Tests']?.map((c) => c.text).toList() ?? [],
+        'Therapeutics': _listControllers['Therapeutics']?.map((c) => c.text).toList() ?? [],
+        'Education': _listControllers['Education']?.map((c) => c.text).toList() ?? [],
+        'FollowUp': _controllers['FollowUp']?.text ?? '',
+      };
+
+      // Preview the PDF
+      final success = await PdfGeneratorService.previewMedicalReport(
+        soapData: soapData,
+        patientData: patient,
+      );
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      if (!success) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to preview PDF report. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator if still showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error previewing PDF: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _updateListField(String key) {
@@ -254,38 +391,65 @@ class _EditableSoapSummaryState extends State<EditableSoapSummary> {
           const SizedBox(height: 16),
           Column(
             children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _generateSummary,
-                  icon: const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text('Generate Summary'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              // Save/Edit button at the top
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isEditing ? _saveChanges : () => setState(() => _isEditing = true),
                   icon: Icon(_isEditing ? Icons.save : Icons.edit, size: 18),
-                  label: Text(_isEditing ? 'Save' : 'Edit'),
+                  label: Text(_isEditing ? 'Save Changes' : 'Edit SOAP'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1976D2),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    elevation: 2,
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+              // Generate and Share buttons in a row
+              Row(
+                children: [
+                  // Generate Report button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _previewReport,
+                      icon: const Icon(Icons.auto_awesome_mosaic, size: 18),
+                      label: const Text('Generate Report'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2).withOpacity(0.1),
+                        foregroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: const Color(0xFF1976D2).withOpacity(0.3)),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Share Report button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _generateSummary,
+                      icon: const Icon(Icons.share, size: 18),
+                      label: const Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

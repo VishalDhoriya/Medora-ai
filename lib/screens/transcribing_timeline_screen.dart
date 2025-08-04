@@ -199,6 +199,7 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                               json: _processController.parsedLlmJson!,
                               soapScrollController: _soapScrollController,
                               onSave: _saveSoapData,
+                              patient: widget.patient,
                             ),
                           // Add extra space at the bottom for scroll
                           const SizedBox(height: 32),

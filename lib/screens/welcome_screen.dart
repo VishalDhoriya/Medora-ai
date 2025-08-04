@@ -204,13 +204,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _stopRecording() async {
-    const systemPrompt = """"{
+    // Calculate patient age for context
+    String patientAge = 'Unknown';
+    if (_patient != null && _patient!['dob'] != null) {
+      final dob = DateTime.tryParse(_patient!['dob']);
+      if (dob != null) {
+        final age = DateTime.now().difference(dob).inDays ~/ 365;
+        patientAge = age.toString();
+      }
+    }
+
+    final systemPrompt = """"{
   "system_prompt": {
     "role": "You are a highly efficient AI medical assistant for on-device use. Your entire output must be a single, extremely brief JSON object.",
-    "primary_directive": "Follow the field instructions precisely. Output ONLY the completed JSON template.",
+    "patient_context": {
+      "name": "${_patient?['name'] ?? 'Unknown'}",
+      "age": "$patientAge years",
+      "gender": "${_patient?['gender'] ?? 'Unknown'}"
+    },
+    "primary_directive": "Follow the field instructions precisely. Output ONLY the completed JSON template. Consider the patient context above when analyzing the medical conversation.",
     "rules": {
       "non_medical_case": "If the input is not a medical query, your entire output must be: {\"extraction_success\": false}",
-      "medical_case": "If it is a medical query, populate the output_template below, strictly following the field instructions and the output template."
+      "medical_case": "If it is a medical query, populate the output_template below, strictly following the field instructions and the output template. Use the patient context (name, age, gender) to provide more accurate medical analysis."
     },
     "field_instructions": {
       "extract_from_text": {
@@ -223,7 +238,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
       },
       "generate_from_analysis": {
-        "instruction": "Analyze the extracted data and generate a concise clinical assessment and plan for these fields:",
+        "instruction": "Analyze the extracted data and generate a concise clinical assessment and plan for these fields. Consider the patient's age and gender for age/gender-specific conditions:",
         "fields": {
           "Symptom_Assessment": "Clinical analysis phrase (<15 words).",
           "Primary_Diagnosis": "Most likely diagnosis (1-5 words).",

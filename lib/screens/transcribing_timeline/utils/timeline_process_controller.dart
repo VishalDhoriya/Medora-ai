@@ -118,6 +118,12 @@ class TimelineProcessController {
         // Update response
         llmResponse += result.partialResult;
         
+        // Debug: Print the raw LLM response
+        print('🔍 Raw LLM Response (${llmResponse.length} chars):');
+        print('---START---');
+        print(llmResponse);
+        print('---END---');
+        
         // Parse JSON
         Map<String, dynamic>? parsedJson;
         try {
