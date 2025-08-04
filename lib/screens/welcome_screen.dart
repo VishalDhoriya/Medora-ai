@@ -12,9 +12,9 @@ import '../services/database_service.dart';
 import '../services/llm_service.dart';
 import '../services/model_config_service.dart';
 import 'settings_screen.dart';
-import 'welcome/widgets/welcome_message.dart';
 import 'welcome/widgets/patient_form.dart';
 import 'welcome/widgets/patient_info_and_recording.dart';
+import 'welcome/widgets/welcome_message.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -31,11 +31,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   // Patient state
   Map<String, dynamic>? _patient;
   bool _showPatientForm = false;
-  
+
   // Previous conversations
   List<CompleteConversationData> _previousConversations = [];
   bool _loadingConversations = false;
-  
+
   // Previous patients
   List<PatientData> _previousPatients = [];
   bool _loadingPatients = false;
@@ -84,9 +84,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     setState(() {
       _loadingConversations = true;
     });
-    
+
     try {
-      final conversations = await DatabaseService.getPatientConversationHistory(patientId);
+      final conversations = await DatabaseService.getPatientConversationHistory(
+        patientId,
+      );
       setState(() {
         _previousConversations = conversations;
         _loadingConversations = false;
@@ -103,7 +105,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     setState(() {
       _loadingPatients = true;
     });
-    
+
     try {
       final patients = await DatabaseService.getAllPatients();
       setState(() {
@@ -126,7 +128,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         'dob': patient.dob,
         'gender': patient.gender,
         'address': patient.address ?? '',
-        'isExistingPatient': true, // Flag to indicate this is an existing patient
+        'isExistingPatient':
+            true, // Flag to indicate this is an existing patient
       };
     });
     // Load previous conversations for this patient
@@ -144,10 +147,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final directory = await getExternalStorageDirectory();
     final modelPath =
         '${directory!.path}/${config.modelDir}/${config.version}/${config.modelFile}';
-    await LlmService.initializeModel(
-      config: config,
-      modelPath: modelPath,
-    );
+    await LlmService.initializeModel(config: config, modelPath: modelPath);
     // Model initialized successfully
   }
 
@@ -161,14 +161,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Future<void> _startRecording() async {
     // Create a conversation record when starting recording
     if (_patient != null) {
-      final conversationId = await DatabaseService.insertConversation(ConversationData(
-        patientId: _patient!['id'],
-        title: 'Medical Consultation - ${DateTime.now().toString().split(' ')[0]}',
-      ));
+      final conversationId = await DatabaseService.insertConversation(
+        ConversationData(
+          patientId: _patient!['id'],
+          title:
+              'Medical Consultation - ${DateTime.now().toString().split(' ')[0]}',
+        ),
+      );
       // Store conversation ID in patient data for later use
       _patient!['currentConversationId'] = conversationId;
     }
-    
+
     transcriber.start();
     setState(() {
       _isRecording = true;
@@ -228,7 +231,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           "Diagnostic_Tests": "Keyword list of recommended tests.",
           "Therapeutics": "Keyword list of treatments.",
           "Education": "List of very short advice (<10 words each).",
-          "FollowUp": "Brief instruction on when to return."
+          "FollowUp": "Brief instruction on when to return.",
+          "Patient_Summary": "Summarize the consultation in 4–5 short sentences in clear, simple language. Must include: (1) the diagnosed condition, (2) prescribed medications or treatments, (3) any required tests or procedures, and (4) next steps or follow-up instructions. Avoid medical jargon and make it understandable to a layperson.",
+
         }
       }
     },
@@ -244,7 +249,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       "Diagnostic_Tests": [],
       "Therapeutics": [],
       "Education": [],
-      "FollowUp": null
+      "FollowUp": null,
+      "Patient_Summary": null
     }
   }
 }""";
@@ -275,7 +281,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       _patient = null;
       _isTranscribing = false;
     });
-    
+
     // Refresh the patient list to show any updates
     _loadPreviousPatients();
 
@@ -309,9 +315,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Main content area
-            Expanded(
-              child: _buildMainContent(),
-            ),
+            Expanded(child: _buildMainContent()),
           ],
         ),
       ),
