@@ -194,7 +194,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           "Reported_Symptoms": "Keyword list of symptoms.",
           "HPI": "1-sentence illness story (<15 words).",
           "Meds_Allergies": "Keyword list of meds & allergies.",
-          "Vitals_Exam": "Objective data mentioned (e.g., 'Temp 101F, red throat')."
+          "Vitals_Exam": "Objective data mentioned (e.g., 'Temp 101F, red throat').",
+          "Patient_Summary": "Summarize the consultation in 4–5 short sentences in clear, simple language. Must include: (1) the diagnosed condition, (2) prescribed medications or treatments, (3) any required tests or procedures, and (4) next steps or follow-up instructions. Avoid medical jargon and make it understandable to a layperson.",
         }
       },
       "generate_from_analysis": {
@@ -222,7 +223,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       "Diagnostic_Tests": [],
       "Therapeutics": [],
       "Education": [],
-      "FollowUp": null
+      "FollowUp": null,
+      "Patient_Summary": null
     }
   }
 }""";
@@ -286,7 +288,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 children: [
                   Text(
                     'Welcome, ${_userName ?? ''}!',
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -313,29 +318,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: !_showPatientForm && _patient == null ? Container(
-        margin: const EdgeInsets.only(bottom: 16, right: 16),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            setState(() {
-              _showPatientForm = true;
-            });
-          },
-          backgroundColor: const Color(0xFF1976D2),
-          foregroundColor: Colors.white,
-          elevation: 8,
-          extendedPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          icon: const Icon(Icons.add, size: 24, color: Colors.white),
-          label: const Text(
-            'New Patient',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ) : null,
+      floatingActionButton: !_showPatientForm && _patient == null
+          ? Container(
+              margin: const EdgeInsets.only(bottom: 16, right: 16),
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  setState(() {
+                    _showPatientForm = true;
+                  });
+                },
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+                elevation: 8,
+                extendedPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
+                icon: const Icon(Icons.add, size: 24, color: Colors.white),
+                label: const Text(
+                  'New Patient',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
@@ -378,7 +388,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          
+
           // Name Field
           TextFormField(
             controller: nameController,
@@ -391,7 +401,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // DOB Field
           TextFormField(
             controller: dobController,
@@ -412,38 +422,40 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 lastDate: DateTime.now(),
               );
               if (picked != null) {
-                dobController.text = "${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                dobController.text =
+                    "${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
               }
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Gender Field
           StatefulBuilder(
-            builder: (context, setModalState) => DropdownButtonFormField<String>(
-              value: selectedGender,
-              decoration: InputDecoration(
-                labelText: 'Gender',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            builder: (context, setModalState) =>
+                DropdownButtonFormField<String>(
+                  value: selectedGender,
+                  decoration: InputDecoration(
+                    labelText: 'Gender',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  items: ['Male', 'Female', 'Other'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setModalState(() {
+                      selectedGender = newValue!;
+                    });
+                  },
                 ),
-                prefixIcon: const Icon(Icons.person_outline),
-              ),
-              items: ['Male', 'Female', 'Other'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setModalState(() {
-                  selectedGender = newValue!;
-                });
-              },
-            ),
           ),
           const SizedBox(height: 16),
-          
+
           // Address Field
           TextFormField(
             controller: addressController,
@@ -457,26 +469,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // Start Conversation Button
           SizedBox(
             height: 54,
             child: ElevatedButton(
               onPressed: () {
-              if (nameController.text.isNotEmpty && 
-                  dobController.text.isNotEmpty) {
-                setState(() {
-                  _patient = {
-                    'name': nameController.text,
-                    'dob': dobController.text,
-                    'gender': selectedGender,
-                    'address': addressController.text,
-                  };
-                  _showPatientForm = false;
-                });
-                // Start recording immediately
-                _startRecording();
-              }
+                if (nameController.text.isNotEmpty &&
+                    dobController.text.isNotEmpty) {
+                  setState(() {
+                    _patient = {
+                      'name': nameController.text,
+                      'dob': dobController.text,
+                      'gender': selectedGender,
+                      'address': addressController.text,
+                    };
+                    _showPatientForm = false;
+                  });
+                  // Start recording immediately
+                  _startRecording();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1976D2),
@@ -491,10 +503,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 children: const [
                   Text(
                     'Start Conversation',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   SizedBox(width: 12),
                   Icon(Icons.arrow_forward, size: 20),
@@ -503,7 +512,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Cancel Button
           TextButton(
             onPressed: () {
@@ -513,10 +522,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             },
             child: const Text(
               'Cancel',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
           ),
         ],
@@ -540,7 +546,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         final birthDate = DateTime(year, month, day);
         final today = DateTime.now();
         int age = today.year - birthDate.year;
-        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+        if (today.month < birthDate.month ||
+            (today.month == birthDate.month && today.day < birthDate.day)) {
           age--;
         }
         return age;
@@ -548,6 +555,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         return null;
       }
     }
+
     return Column(
       children: [
         // Enhanced Patient Header Card - Larger during recording
@@ -594,7 +602,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      _patient!['name'].toString().substring(0, 1).toUpperCase(),
+                      _patient!['name']
+                          .toString()
+                          .substring(0, 1)
+                          .toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
@@ -603,9 +614,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Patient Info - Larger fonts
                 Expanded(
                   child: Column(
@@ -640,9 +651,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Recording Controls
         if (_isTranscribing)
           Column(
@@ -668,7 +679,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ],
           )
         else if (!_isRecording)
-          const SizedBox(height: 24) // Just show spacing when patient is added but not recording
+          const SizedBox(
+            height: 24,
+          ) // Just show spacing when patient is added but not recording
         else ...[
           Text(
             durationText,
@@ -747,9 +760,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   // Compact Patient Header Widget for transcribing page
-  Widget buildCompactPatientHeader(Map<String, dynamic> patient, {bool showDropdown = true}) {
+  Widget buildCompactPatientHeader(
+    Map<String, dynamic> patient, {
+    bool showDropdown = true,
+  }) {
     bool _isExpanded = false;
-    
+
     int? calculateAge(String dob) {
       try {
         final parts = dob.split('-');
@@ -760,7 +776,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         final birthDate = DateTime(year, month, day);
         final today = DateTime.now();
         int age = today.year - birthDate.year;
-        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+        if (today.month < birthDate.month ||
+            (today.month == birthDate.month && today.day < birthDate.day)) {
           age--;
         }
         return age;
@@ -791,11 +808,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           children: [
             // Main header row
             InkWell(
-              onTap: showDropdown ? () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              } : null,
+              onTap: showDropdown
+                  ? () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                    }
+                  : null,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -815,7 +834,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          patient['name'].toString().substring(0, 1).toUpperCase(),
+                          patient['name']
+                              .toString()
+                              .substring(0, 1)
+                              .toUpperCase(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -824,9 +846,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(width: 12),
-                    
+
                     // Compact Patient Info
                     Expanded(
                       child: Column(
@@ -856,11 +878,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ],
                       ),
                     ),
-                    
+
                     // Dropdown arrow
                     if (showDropdown)
                       Icon(
-                        _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        _isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
                         color: Colors.grey[600],
                         size: 20,
                       ),
@@ -868,7 +892,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
             ),
-            
+
             // Expanded details
             if (_isExpanded && showDropdown)
               Container(
@@ -898,7 +922,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                     ),
-                    
+
                     // DOB
                     if (patient['dob'] != null && patient['dob'].isNotEmpty)
                       Padding(
@@ -930,9 +954,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           ],
                         ),
                       ),
-                    
+
                     // Address
-                    if (patient['address'] != null && patient['address'].isNotEmpty)
+                    if (patient['address'] != null &&
+                        patient['address'].isNotEmpty)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
