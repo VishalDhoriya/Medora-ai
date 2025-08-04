@@ -16,7 +16,6 @@ import 'welcome/widgets/welcome_message.dart';
 import 'welcome/widgets/patient_form.dart';
 import 'welcome/widgets/patient_info_and_recording.dart';
 
-
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -45,7 +44,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isRecording = false;
   bool _isPaused = false;
-  // String? _audioPath;
 
   // Transcription state
   bool _isTranscribing = false;
@@ -53,7 +51,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Timer? _transcribeDotsTimer;
   int _transcribeDotCount = 0;
   late RealTimeTranscriber transcriber;
-  // Whisper? _whisperModel;
 
   @override
   void initState() {
@@ -69,18 +66,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
     );
     transcriber.init(); // pre-load Whisper + permissions
-    // _initializeWhisperModel();
   }
-
-  // Future<void> _initializeWhisperModel() async {
-  //   setState(() {
-  //     _whisperModel = Whisper(
-  //       model: WhisperModel.base,
-  //       downloadHost:
-  //           "https://huggingface.co/ggerganov/whisper.cpp/resolve/main",
-  //     );
-  //   });
-  // }
 
   Future<void> _loadUserAndModel() async {
     final prefs = await SharedPreferences.getInstance();
@@ -198,41 +184,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         });
       }
     });
-    // final hasPermission = await _audioRecorder.hasPermission();
-    // if (hasPermission) {
-    //   final dir = await getApplicationDocumentsDirectory();
-    //   final path =
-    //       '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
-    //   await _audioRecorder.start(
-    //     const RecordConfig(
-    //       encoder: AudioEncoder.wav,
-    //       sampleRate: 16000,
-    //       bitRate: 128000,
-    //     ),
-    //     path: path,
-    //   );
-    //   setState(() {
-    //     _isRecording = true;
-    //     _isPaused = false;
-    //     _recordDuration = 0;
-    //     _audioPath = null;
-    //     _transcript = null;
-    //   });
-    //   _timer?.cancel();
-    //   _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-    //     if (!_isPaused) {
-    //       setState(() {
-    //         _recordDuration++;
-    //       });
-    //     }
-    //   });
-    // } else {
-    //   if (mounted) {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text('Microphone permission denied')),
-    //     );
-    //   }
-    // }
   }
 
   Future<void> _pauseRecording() async {
@@ -308,7 +259,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     });
     _timer?.cancel();
 
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => TranscribingTimelineScreen(
           transcriber: transcriber,
@@ -318,16 +269,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
     );
 
+    // Reset patient state when returning from transcribing screen
+    // This ensures user goes back to welcome screen instead of patient info
+    setState(() {
+      _patient = null;
+      _isTranscribing = false;
+    });
+    
+    // Refresh the patient list to show any updates
+    _loadPreviousPatients();
+
     try {
-      final result = await transcriber.stop();
+      final transcribeResult = await transcriber.stop();
       setState(() {
-        _transcript = result;
-        _isTranscribing = false;
+        _transcript = transcribeResult;
       });
     } catch (e) {
       setState(() {
         _transcript = 'Transcription error: $e';
-        _isTranscribing = false;
       });
     }
     _transcribeDotsTimer?.cancel();
@@ -345,101 +304,70 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Only show welcome message when no patient is added and form is not shown
-          if (!_showPatientForm && _patient == null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome, ${_userName ?? ''}!',
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Main content area
+            Expanded(
+              child: _buildMainContent(),
             ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Show patient form or recording controls
-                    if (_showPatientForm)
-                      PatientForm(
-                        onPatientCreated: (patientData) {
-                          setState(() {
-                            _patient = patientData;
-                            _showPatientForm = false;
-                          });
-                          _loadPreviousConversations(patientData['id']);
-                        },
-                        onCancel: () {
-                          setState(() {
-                            _showPatientForm = false;
-                          });
-                        },
-                      )
-                    else if (_patient != null)
-                      PatientInfoAndRecording(
-                        patient: _patient!,
-                        isRecording: _isRecording,
-                        isPaused: _isPaused,
-                        isTranscribing: _isTranscribing,
-                        recordDuration: _recordDuration,
-                        transcribeDotCount: _transcribeDotCount,
-                        transcript: _transcript,
-                        previousConversations: _previousConversations,
-                        loadingConversations: _loadingConversations,
-                        onStartRecording: _startRecording,
-                        onPauseRecording: _pauseRecording,
-                        onResumeRecording: _resumeRecording,
-                        onStopRecording: _stopRecording,
-                      )
-                    else
-                      WelcomeMessage(
-                        previousPatients: _previousPatients,
-                        loadingPatients: _loadingPatients,
-                        onSelectPatient: _selectExistingPatient,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: !_showPatientForm && _patient == null ? Container(
-        margin: const EdgeInsets.only(bottom: 16, right: 16),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            setState(() {
-              _showPatientForm = true;
-            });
-          },
-          backgroundColor: const Color(0xFF1976D2),
-          foregroundColor: Colors.white,
-          elevation: 8,
-          extendedPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          icon: const Icon(Icons.add, size: 24, color: Colors.white),
-          label: const Text(
-            'New Patient',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
+          ],
         ),
-      ) : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      ),
     );
+  }
+
+  Widget _buildMainContent() {
+    if (_showPatientForm) {
+      return PatientForm(
+        onPatientCreated: (patientData) {
+          setState(() {
+            _patient = patientData;
+            _showPatientForm = false;
+          });
+          _loadPreviousConversations(patientData['id']);
+        },
+        onCancel: () {
+          setState(() {
+            _showPatientForm = false;
+          });
+        },
+      );
+    } else if (_patient != null) {
+      return PatientInfoAndRecording(
+        patient: _patient!,
+        isRecording: _isRecording,
+        isPaused: _isPaused,
+        isTranscribing: _isTranscribing,
+        recordDuration: _recordDuration,
+        transcribeDotCount: _transcribeDotCount,
+        transcript: _transcript,
+        previousConversations: _previousConversations,
+        loadingConversations: _loadingConversations,
+        onStartRecording: _startRecording,
+        onPauseRecording: _pauseRecording,
+        onResumeRecording: _resumeRecording,
+        onStopRecording: _stopRecording,
+        onBack: () {
+          setState(() {
+            _patient = null;
+          });
+        },
+      );
+    } else {
+      return WelcomeMessage(
+        previousPatients: _previousPatients,
+        loadingPatients: _loadingPatients,
+        onSelectPatient: _selectExistingPatient,
+        onAddNewPatient: () {
+          setState(() {
+            _showPatientForm = true;
+          });
+        },
+        userName: _userName, // Pass the userName
+      );
+    }
   }
 
   @override

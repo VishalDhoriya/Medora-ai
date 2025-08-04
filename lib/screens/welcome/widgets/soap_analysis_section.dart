@@ -40,7 +40,7 @@ class SoapAnalysisSection extends StatelessWidget {
         _buildSoapHeader(),
         const SizedBox(height: 16),
         _buildSoapContent(jsonData),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         _buildActionButtons(),
       ],
     );
@@ -354,45 +354,7 @@ class SoapAnalysisSection extends StatelessWidget {
   }
 
   Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: onStartRecording,
-              icon: const Icon(Icons.mic, size: 20),
-              label: const Text('New Consultation'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1976D2),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Navigate to detailed view of all conversations
-              },
-              icon: const Icon(Icons.history, size: 20),
-              label: const Text('View History'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1976D2),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: const BorderSide(color: Color(0xFF1976D2)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return Row(
     );
   }
 }

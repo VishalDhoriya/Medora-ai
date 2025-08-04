@@ -18,6 +18,7 @@ class PatientInfoAndRecording extends StatelessWidget {
   final VoidCallback onPauseRecording;
   final VoidCallback onResumeRecording;
   final VoidCallback onStopRecording;
+  final VoidCallback? onBack; // Add back callback
 
   const PatientInfoAndRecording({
     super.key,
@@ -34,6 +35,7 @@ class PatientInfoAndRecording extends StatelessWidget {
     required this.onPauseRecording,
     required this.onResumeRecording,
     required this.onStopRecording,
+    this.onBack, // Add back callback
   });
 
   @override
@@ -41,27 +43,48 @@ class PatientInfoAndRecording extends StatelessWidget {
     String durationText = WelcomeUtils.formatRecordingDuration(recordDuration);
     String transcribingText = 'Transcribing${'.' * transcribeDotCount}';
 
-    return Column(
-      children: [
-        // Enhanced Patient Header Card
-        _buildPatientHeader(),
-        
-        const SizedBox(height: 24),
-        
-        // Recording Controls
-        if (isTranscribing)
-          _buildTranscribingState(transcribingText)
-        else if (transcript != null)
-          _buildTranscriptState()
-        else if (!isRecording)
-          _buildIdleState()
-        else
-          _buildRecordingState(durationText),
-        
-        // Previous Conversations Section
-        if (!isRecording && previousConversations.isNotEmpty)
-          _buildPreviousConversations(),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Back button row
+          if (onBack != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back, size: 20),
+                    label: const Text('Back to Welcome'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF1976D2),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          // Enhanced Patient Header Card
+          _buildPatientHeader(),
+          
+          const SizedBox(height: 24),
+          
+          // Recording Controls
+          if (isTranscribing)
+            _buildTranscribingState(transcribingText)
+          else if (transcript != null)
+            _buildTranscriptState()
+          else if (!isRecording)
+            _buildIdleState()
+          else
+            _buildRecordingState(durationText),
+          
+          // Previous Conversations Section
+          if (!isRecording && previousConversations.isNotEmpty)
+            _buildPreviousConversations(),
+        ],
+      ),
     );
   }
 
@@ -90,8 +113,8 @@ class PatientInfoAndRecording extends StatelessWidget {
           children: [
             // Patient Avatar
             Container(
-              width: 64,
-              height: 64,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
@@ -311,7 +334,7 @@ class PatientInfoAndRecording extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -358,23 +381,6 @@ class PatientInfoAndRecording extends StatelessWidget {
                   // TODO: Show conversation details
                 },
               )).toList()),
-        
-        if (previousConversations.length > 3)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextButton(
-              onPressed: () {
-                // TODO: Show all conversations
-              },
-              child: Text(
-                'View all ${previousConversations.length} conversations',
-                style: const TextStyle(
-                  color: Color(0xFF1976D2),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

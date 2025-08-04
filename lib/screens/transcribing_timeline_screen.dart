@@ -107,10 +107,21 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
       ),
     ];
     
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Review & Edit'),
-      ),
+    return WillPopScope(
+      onWillPop: () async {
+        // Allow back navigation only if both processes are complete
+        return _processController.transcribeDone && _processController.llmDone;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Review & Edit'),
+          leading: _processController.transcribeDone && _processController.llmDone
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              : Container(), // Hide back button during processing
+        ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -150,6 +161,7 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
             );
           },
         ),
+      ),
       ),
     );
   }
