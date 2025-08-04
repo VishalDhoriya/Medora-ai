@@ -195,4 +195,8 @@ class TimelineProcessController {
     }
     return null;
   }
+
+  void updateParsedLlmJson(Map<String, dynamic> updatedData) {
+    _parsedLlmJson = updatedData;
+  }
 }

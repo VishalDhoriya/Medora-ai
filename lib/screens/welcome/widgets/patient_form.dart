@@ -33,9 +33,10 @@ class _PatientFormState extends State<PatientForm> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           const Text(
             'Patient Information',
             style: TextStyle(
@@ -190,6 +191,7 @@ class _PatientFormState extends State<PatientForm> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

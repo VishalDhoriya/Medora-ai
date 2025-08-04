@@ -4,9 +4,10 @@ import 'real_time_transcriber.dart';
 import 'transcribing_timeline/widgets/compact_patient_header.dart';
 import 'transcribing_timeline/widgets/timeline_components.dart';
 import 'transcribing_timeline/widgets/system_thoughts.dart';
-import 'transcribing_timeline/widgets/soap_summary.dart';
+import 'transcribing_timeline/widgets/editable_soap_summary.dart';
 import 'transcribing_timeline/utils/timeline_utils.dart';
 import 'transcribing_timeline/utils/timeline_process_controller.dart';
+import '../services/database_service.dart';
 
 /// A beautiful timeline UI that uses TranscribingScreen as a backend module.
 /// It launches the process, listens for transcript and LLM results, and displays each step in a timeline with gradients and expandable cards.
@@ -74,6 +75,54 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
     _mainScrollController.dispose();
     _soapScrollController.dispose();
     super.dispose();
+  }
+
+  void _saveSoapData(Map<String, dynamic> updatedData) async {
+    // Update the controller's parsed JSON with the edited data
+    _processController.updateParsedLlmJson(updatedData);
+    
+    // Save the edited data back to the database
+    if (widget.patient != null && widget.patient!['currentConversationId'] != null) {
+      try {
+        // Get the existing LLM output data
+        final existingLlmOutput = await DatabaseService.getLlmOutputByConversation(
+          widget.patient!['currentConversationId']
+        );
+        
+        if (existingLlmOutput != null) {
+          // Update the parsed JSON with the edited data
+          final updatedLlmOutput = LlmOutputData(
+            id: existingLlmOutput.id,
+            conversationId: existingLlmOutput.conversationId,
+            rawOutput: existingLlmOutput.rawOutput,
+            parsedJson: updatedData, // Use the edited data
+            extractionSuccess: existingLlmOutput.extractionSuccess,
+            duration: existingLlmOutput.duration,
+            createdAt: existingLlmOutput.createdAt,
+          );
+          
+          // Save to database
+          await DatabaseService.updateLlmOutput(updatedLlmOutput);
+          print('💾 Edited SOAP data saved to database');
+        }
+      } catch (e) {
+        print('❌ Error saving SOAP data to database: $e');
+      }
+    }
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('SOAP note changes saved successfully!'),
+        backgroundColor: Color(0xFF1976D2),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
+    // You can add additional save logic here, such as:
+    // - Sending to a server
+    // - Updating patient records
+    print('💾 SOAP data saved: ${updatedData.keys.join(', ')}');
   }
 
   void _startProcess() {
@@ -146,9 +195,10 @@ class _TranscribingTimelineScreenState extends State<TranscribingTimelineScreen>
                           TimelineGradient(steps: steps),
                           const SizedBox(height: 24),
                           if (_processController.llmDone && _processController.parsedLlmJson != null)
-                            SoapSummary(
+                            EditableSoapSummary(
                               json: _processController.parsedLlmJson!,
                               soapScrollController: _soapScrollController,
+                              onSave: _saveSoapData,
                             ),
                           // Add extra space at the bottom for scroll
                           const SizedBox(height: 32),
