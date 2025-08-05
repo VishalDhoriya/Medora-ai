@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'real_time_transcriber.dart';
+import 'base_transcriber.dart';
 import 'transcribing_timeline/widgets/compact_patient_header.dart';
 import 'transcribing_timeline/widgets/timeline_components.dart';
 import 'transcribing_timeline/widgets/system_thoughts.dart';
@@ -13,7 +13,7 @@ import '../services/database_service.dart';
 /// It launches the process, listens for transcript and LLM results, and displays each step in a timeline with gradients and expandable cards.
 class TranscribingTimelineScreen extends StatefulWidget {
   final String systemPrompt;
-  final RealTimeTranscriber transcriber;
+  final BaseTranscriber transcriber;
   final Map<String, dynamic>? patient;
   
   const TranscribingTimelineScreen({

@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:flutter_gallery/screens/real_time_transcriber.dart';
+import 'package:flutter_gallery/screens/base_transcriber.dart';
 import '../../../services/database_service.dart';
 import '../../../services/llm_service.dart';
 import 'timeline_utils.dart';
 
 class TimelineProcessController {
-  final RealTimeTranscriber transcriber;
+  final BaseTranscriber transcriber;
   final String systemPrompt;
   final Map<String, dynamic>? patient;
   

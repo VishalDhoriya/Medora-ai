@@ -4,22 +4,22 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
+import '../services/demo_speech_service.dart';
 import 'base_transcriber.dart';
 
-class RealTimeTranscriber extends BaseTranscriber {
+class DemoTranscriber extends BaseTranscriber {
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isRecording = false;
+  bool _isDemoMode = false;
   late Directory _dir;
   final Whisper _whisper;
 
   final List<String> _partialTranscripts = [];
-  final Map<int, String> _partialTranscriptsMap =
-      {}; // To store ordered transcriptions
-  final List<Future<void>> _transcriptionJobs =
-      []; // To track running transcription jobs
-  int _chunkCounter = 0; // To assign a unique index per chunk
+  final Map<int, String> _partialTranscriptsMap = {};
+  final List<Future<void>> _transcriptionJobs = [];
+  int _chunkCounter = 0;
 
-  RealTimeTranscriber(this._whisper);
+  DemoTranscriber(this._whisper);
 
   @override
   Future<void> init() async {
@@ -31,8 +31,16 @@ class RealTimeTranscriber extends BaseTranscriber {
 
   @override
   Future<void> start({bool demoMode = false}) async {
+    _isDemoMode = demoMode;
     _isRecording = true;
 
+    if (_isDemoMode) {
+      // For demo mode, we don't actually record, just simulate
+      print('🎭 Starting demo mode - simulating recording...');
+      return;
+    }
+
+    // Original recording logic for real recording
     while (_isRecording) {
       final chunkPath =
           '${_dir.path}/chunk_${DateTime.now().millisecondsSinceEpoch}.wav';
@@ -53,7 +61,7 @@ class RealTimeTranscriber extends BaseTranscriber {
       if (savedPath != null && _isRecording) {
         print('transcription started');
         final job = _transcribeChunk(savedPath, chunkIndex);
-        _transcriptionJobs.add(job); // ✅ track it
+        _transcriptionJobs.add(job);
       }
     }
   }
@@ -62,13 +70,20 @@ class RealTimeTranscriber extends BaseTranscriber {
   Future<String> stop() async {
     _isRecording = false;
 
+    if (_isDemoMode) {
+      // Return demo transcript immediately
+      print('🎭 Demo mode - returning demo transcript');
+      return DemoSpeechService.getDemoTranscript();
+    }
+
+    // Original transcription logic for real recording
     if (await _audioRecorder.isRecording()) {
       final lastPath = await _audioRecorder.stop();
       if (lastPath != null) {
         final lastIndex = _chunkCounter++;
         _transcriptionJobs.add(
           _transcribeChunk(lastPath, lastIndex),
-        ); // ✅ also track final chunk
+        );
       }
     }
 
@@ -84,29 +99,6 @@ class RealTimeTranscriber extends BaseTranscriber {
     return transcriptString;
   }
 
-  // Future<String> stop() async {
-  //   _isRecording = false;
-
-  //   if (await _audioRecorder.isRecording()) {
-  //     final lastPath = await _audioRecorder.stop();
-  //     if (lastPath != null) {
-  //       final lastIndex = _chunkCounter++;
-  //       _transcriptionJobs.add(
-  //         _transcribeChunk(lastPath, lastIndex),
-  //       ); // ✅ also track final chunk
-  //     }
-  //   }
-
-  //   // Wait for all transcriptions to complete
-  //   await Future.wait(_transcriptionJobs);
-
-  //   // Sort and join all transcript segments
-  //   final orderedTranscript = _partialTranscripts.entries.toList()
-  //     ..sort((a, b) => a.key.compareTo(b.key));
-
-  //   return orderedTranscript.map((e) => e.value).join('\n');
-  // }
-
   Future<void> _transcribeChunk(String path, int chunkIndex) async {
     try {
       final result = await _whisper.transcribe(
@@ -120,7 +112,7 @@ class RealTimeTranscriber extends BaseTranscriber {
       );
 
       if (result.text.isNotEmpty) {
-        _partialTranscriptsMap[chunkIndex] = result.text; // ✅ update Map
+        _partialTranscriptsMap[chunkIndex] = result.text;
         _partialTranscripts.add(result.text);
         print('[Transcription] Chunk $chunkIndex: ${result.text}');
       }

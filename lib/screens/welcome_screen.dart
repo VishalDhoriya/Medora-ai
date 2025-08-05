@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gallery/screens/real_time_transcriber.dart';
+import 'package:flutter_gallery/screens/demo_transcriber.dart';
 import 'package:flutter_gallery/screens/transcribing_timeline_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -45,6 +46,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isRecording = false;
   bool _isPaused = false;
+  bool _isDemoMode = false;
 
   // Transcription state
   bool _isTranscribing = false;
@@ -52,6 +54,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Timer? _transcribeDotsTimer;
   int _transcribeDotCount = 0;
   late RealTimeTranscriber transcriber;
+  late DemoTranscriber demoTranscriber;
 
   @override
   void initState() {
@@ -60,6 +63,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _loadUserAndModel();
     _loadPreviousPatients();
     transcriber = RealTimeTranscriber(
+      Whisper(
+        model: WhisperModel.baseQ8,
+        downloadHost:
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main",
+      ),
+    );
+    demoTranscriber = DemoTranscriber(
       Whisper(
         model: WhisperModel.baseQ8,
         downloadHost:
@@ -160,20 +170,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Check if this is a demo patient
+    bool isDemo = _patient != null && (_patient!['isDemoPatient'] == true);
+    
     // Create a conversation record when starting recording
     if (_patient != null) {
       final conversationId = await DatabaseService.insertConversation(
         ConversationData(
           patientId: _patient!['id'],
-          title:
-              'Medical Consultation - ${DateTime.now().toString().split(' ')[0]}',
+          title: isDemo 
+              ? 'Demo Consultation - ${DateTime.now().toString().split(' ')[0]}'
+              : 'Medical Consultation - ${DateTime.now().toString().split(' ')[0]}',
         ),
       );
       // Store conversation ID in patient data for later use
       _patient!['currentConversationId'] = conversationId;
     }
 
-    transcriber.start();
+    _isDemoMode = isDemo;
+    
+    if (_isDemoMode) {
+      // Start demo transcriber
+      await demoTranscriber.start(demoMode: true);
+    } else {
+      // Start real transcriber
+      transcriber.start();
+    }
+    
     setState(() {
       _isRecording = true;
       _isPaused = false;
@@ -284,7 +307,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => TranscribingTimelineScreen(
-          transcriber: transcriber,
+          transcriber: _isDemoMode ? demoTranscriber : transcriber,
           systemPrompt: systemPrompt,
           patient: _patient,
         ),
@@ -296,13 +319,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     setState(() {
       _patient = null;
       _isTranscribing = false;
+      _isDemoMode = false;
     });
 
     // Refresh the patient list to show any updates
     _loadPreviousPatients();
 
     try {
-      final transcribeResult = await transcriber.stop();
+      final transcribeResult = _isDemoMode 
+          ? await demoTranscriber.stop()
+          : await transcriber.stop();
       setState(() {
         _transcript = transcribeResult;
       });
@@ -389,6 +415,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         onPauseRecording: _pauseRecording,
         onResumeRecording: _resumeRecording,
         onStopRecording: _stopRecording,
+        onStartDemo: _startDemoMode,
         onBack: () {
           setState(() {
             _patient = null;
@@ -408,6 +435,106 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         userName: _userName, // Pass the userName
       );
     }
+  }
+
+  Future<void> _startDemoMode() async {
+    // Calculate patient age for context (use default for demo)
+    String patientAge = '35'; // Default demo age
+
+    final systemPrompt = """"{
+  "system_prompt": {
+    "role": "You are a highly efficient AI medical assistant for on-device use. Your entire output must be a single, extremely brief JSON object.",
+    "patient_context": {
+      "name": "${_patient?['name'] ?? 'Demo Patient'}",
+      "age": "$patientAge years",
+      "gender": "${_patient?['gender'] ?? 'Unknown'}"
+    },
+    "primary_directive": "Follow the field instructions precisely. Output ONLY the completed JSON template. Consider the patient context above when analyzing the medical conversation.",
+    "rules": {
+      "non_medical_case": "If the input is not a medical query, your entire output must be: {\"extraction_success\": false}",
+      "medical_case": "If it is a medical query, populate the output_template below, strictly following the field instructions and the output template. Use the patient context (name, age, gender) to provide more accurate medical analysis."
+    },
+    "field_instructions": {
+      "extract_from_text": {
+        "instruction": "Find and briefly summarize this information directly from the user's text:",
+        "fields": {
+          "Reported_Symptoms": "Keyword list of symptoms.",
+          "HPI": "1-sentence illness story (<15 words).",
+          "Meds_Allergies": "Keyword list of meds & allergies.",
+          "Vitals_Exam": "Objective data mentioned (e.g., 'Temp 101F, red throat')."
+        }
+      },
+      "generate_from_analysis": {
+        "instruction": "Analyze the extracted data and generate a concise clinical assessment and plan for these fields. Consider the patient's age and gender for age/gender-specific conditions:",
+        "fields": {
+          "Symptom_Assessment": "Clinical analysis phrase (<15 words).",
+          "Primary_Diagnosis": "Most likely diagnosis (1-5 words).",
+          "Differentials": "List of other possible diagnoses.",
+          "Diagnostic_Tests": "Keyword list of recommended tests.",
+          "Therapeutics": "Keyword list of treatments.",
+          "Education": "List of very short advice (<10 words each).",
+          "FollowUp": "Brief instruction on when to return.",
+          "Patient_Summary": "Summarize the consultation in 4–5 short sentences in clear, simple language. Must include: (1) the diagnosed condition, (2) prescribed medications or treatments, (3) any required tests or procedures, and (4) next steps or follow-up instructions. Avoid medical jargon and make it understandable to a layperson.",
+
+        }
+      }
+    },
+      "output_template": {
+      "extraction_success": true,
+      "Reported_Symptoms": [],
+      "HPI": null,
+      "Meds_Allergies": [],
+      "Vitals_Exam": null,
+      "Symptom_Assessment": null,
+      "Primary_Diagnosis": null,
+      "Differentials": [],
+      "Diagnostic_Tests": [],
+      "Therapeutics": [],
+      "Education": [],
+      "FollowUp": null,
+      "Patient_Summary": null
+    }
+  }
+}""";
+
+    // Set demo mode and jump directly to transcribing timeline
+    setState(() {
+      _isDemoMode = true;
+      _isTranscribing = true;
+    });
+
+    // Create conversation record for demo
+    if (_patient != null) {
+      final conversationId = await DatabaseService.insertConversation(
+        ConversationData(
+          patientId: _patient!['id'],
+          title: 'Demo Consultation - ${DateTime.now().toString().split(' ')[0]}',
+        ),
+      );
+      _patient!['currentConversationId'] = conversationId;
+    }
+
+    // Start demo transcriber and jump to timeline immediately
+    await demoTranscriber.start(demoMode: true);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TranscribingTimelineScreen(
+          transcriber: demoTranscriber,
+          systemPrompt: systemPrompt,
+          patient: _patient,
+        ),
+      ),
+    );
+
+    // Reset state when returning
+    setState(() {
+      _patient = null;
+      _isTranscribing = false;
+      _isDemoMode = false;
+    });
+
+    _loadPreviousPatients();
   }
 
   @override

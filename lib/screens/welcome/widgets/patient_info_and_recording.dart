@@ -18,6 +18,7 @@ class PatientInfoAndRecording extends StatefulWidget {
   final VoidCallback onPauseRecording;
   final VoidCallback onResumeRecording;
   final VoidCallback onStopRecording;
+  final VoidCallback? onStartDemo; // Add demo callback
   final VoidCallback? onBack; // Add back callback
 
   const PatientInfoAndRecording({
@@ -35,6 +36,7 @@ class PatientInfoAndRecording extends StatefulWidget {
     required this.onPauseRecording,
     required this.onResumeRecording,
     required this.onStopRecording,
+    this.onStartDemo, // Add demo callback
     this.onBack, // Add back callback
   });
 
@@ -332,7 +334,7 @@ class _PatientInfoAndRecordingState extends State<PatientInfoAndRecording> {
   }
 
   Widget _buildIdleState() {
-    // Show SOAP analysis for existing patients, mic button for new patients
+    // Show SOAP analysis for existing patients, recording options for new patients
     if (widget.patient['isExistingPatient'] == true) {
       return SoapAnalysisSection(
         previousConversations: widget.previousConversations,
@@ -341,28 +343,29 @@ class _PatientInfoAndRecordingState extends State<PatientInfoAndRecording> {
     } else {
       return Column(
         children: [
+          // Regular Recording Button
           GestureDetector(
             onTap: widget.onStartRecording,
             child: Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1976D2).withOpacity(0.18),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1976D2).withOpacity(0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
               ),
               child: const Center(
-                child: Icon(Icons.mic, color: Colors.white, size: 36),
+          child: Icon(Icons.mic, color: Colors.white, size: 36),
               ),
             ),
           ),
@@ -371,6 +374,86 @@ class _PatientInfoAndRecordingState extends State<PatientInfoAndRecording> {
             'Tap to start conversation',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1976D2)),
           ),
+
+          // Divider
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+            child: Row(
+              children: [
+          Expanded(child: Divider(color: Colors.grey)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'OR',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: Colors.grey)),
+              ],
+            ),
+          ),
+
+          // Demo Speech Button (Box shaped, with icon, styled as requested)
+          if (widget.onStartDemo != null)
+            GestureDetector(
+              onTap: widget.onStartDemo,
+              child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF1976D2).withOpacity(0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1976D2).withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.auto_awesome, color: Color(0xFF1976D2), size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Try Demo Speech',
+                style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+              ),
+            ),
+
+          if (widget.onStartDemo != null) ...[
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+          'Experience a sample medical consultation to see how the AI analyzes conversations',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+              ),
+            ),
+          ],
         ],
       );
     }
