@@ -86,7 +86,7 @@ class LlmInferenceHandler(
         println("[LlmInferenceHandler.initializeModel] Entered initializeModel")
         val modelId = call.argument<String>("modelId")
         val incomingModelPath = call.argument<String>("modelPath")
-        val maxTokens = call.argument<Int>("maxTokens") ?: 1024
+        val maxTokens = call.argument<Int>("maxTokens") ?: 8192  // Increased from 1024
         val temperature = call.argument<Double>("temperature")?.toFloat() ?: 1.0f
         val topK = call.argument<Int>("topK") ?: 40
         val topP = call.argument<Double>("topP")?.toFloat() ?: 0.9f

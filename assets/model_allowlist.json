@@ -13,7 +13,7 @@
         "topK": 64,
         "topP": 0.95,
         "temperature": 1.0,
-        "maxTokens": 4096,
+        "maxTokens": 8192,
         "accelerators": "cpu,gpu"
       },
       "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image"]
@@ -31,7 +31,7 @@
         "topK": 64,
         "topP": 0.95,
         "temperature": 1.0,
-        "maxTokens": 4096,
+        "maxTokens": 8192,
         "accelerators": "cpu,gpu"
       },
       "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image"]

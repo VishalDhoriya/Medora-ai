@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/model_config_service.dart';
-import 'dart:async';
 import '../services/model_download_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/huggingface_token_verifier.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -16,82 +16,71 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _nameController = TextEditingController();
   final _hfTokenController = TextEditingController();
+  
   List<ModelConfig> _modelConfigs = [];
   List<String> _modelNames = [];
   String? _selectedModel;
   bool _loadingModels = true;
-  DownloadProgress? _downloadProgress;
-  bool _isDownloading = false;
-  StreamSubscription<DownloadProgress>? _downloadSub;
-  bool _verifyingToken = false;
   bool _tokenValid = false;
+  bool _verifyingToken = false;
   String? _tokenError;
+  bool _isDownloading = false;
+  DownloadProgress? _downloadProgress;
+  StreamSubscription<DownloadProgress>? _downloadSub;
 
   @override
   void initState() {
     super.initState();
-    _loadPrefsAndModels();
+    _loadModels();
   }
 
-  Future<void> _loadPrefsAndModels() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedName = prefs.getString('onboard_name');
-    final savedModel = prefs.getString('onboard_model');
-    final savedToken = prefs.getString('onboard_hf_token');
-    await _loadModelNames();
-    if (savedName != null) _nameController.text = savedName;
-    if (savedModel != null && _modelNames.contains(savedModel)) {
-      setState(() { _selectedModel = savedModel; });
-    }
-    if (savedToken != null) _hfTokenController.text = savedToken;
-    // If token present, verify it
-    if (savedToken != null && savedToken.isNotEmpty) {
-      _verifyToken(savedToken);
-    }
-    // If all present, skip onboarding (replace with navigation to main app)
-    if (savedName != null && savedModel != null && savedToken != null) {
-      // TODO: Navigate to main app
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _hfTokenController.dispose();
+    _downloadSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadModels() async {
+    try {
+      final configs = await ModelConfigService.loadModelConfigs();
+      setState(() {
+        _modelConfigs = configs;
+        _modelNames = configs.map((c) => c.modelName).toList();
+        _loadingModels = false;
+        if (_modelNames.isNotEmpty) {
+          _selectedModel = _modelNames.first;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _loadingModels = false;
+      });
     }
   }
 
-  Future<void> _verifyToken(String token) async {
+  void _verifyToken(String token) async {
+    if (token.isEmpty) return;
     setState(() {
       _verifyingToken = true;
       _tokenError = null;
-      _tokenValid = false;
     });
+
     try {
-      final valid = await HuggingFaceTokenVerifier.verifyToken(token);
+      final isValid = await HuggingFaceTokenVerifier.verifyToken(token);
       setState(() {
-        _tokenValid = valid;
+        _tokenValid = isValid;
         _verifyingToken = false;
-        _tokenError = valid ? null : 'Invalid Hugging Face token.';
+        if (!isValid) {
+          _tokenError = 'Invalid token';
+        }
       });
     } catch (e) {
       setState(() {
         _tokenValid = false;
         _verifyingToken = false;
-        _tokenError = 'Error verifying token.';
-      });
-    }
-  }
-
-  Future<void> _loadModelNames() async {
-    try {
-      final configs = await ModelConfigService.loadModelConfigs();
-      final names = configs.map((c) => c.modelName).toList();
-      setState(() {
-        _modelConfigs = configs;
-        _modelNames = names;
-        _selectedModel = names.isNotEmpty ? names.first : null;
-        _loadingModels = false;
-      });
-    } catch (e) {
-      setState(() {
-        _modelConfigs = [];
-        _modelNames = [];
-        _selectedModel = null;
-        _loadingModels = false;
+        _tokenError = 'Error verifying token';
       });
     }
   }
@@ -116,26 +105,96 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     if (_isDownloading && _downloadProgress != null) {
       // Show download progress UI
       final progress = _downloadProgress;
       final percent = progress?.progress ?? 0.0;
       return Scaffold(
-        appBar: AppBar(title: const Text('Downloading Model'), centerTitle: true),
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: const Text(
+            'Downloading Model',
+            style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w600),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Color(0xFF1976D2)),
+        ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(_selectedModel ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 32),
-              LinearProgressIndicator(value: percent, minHeight: 6),
-              const SizedBox(height: 12),
-              if (progress != null)
-                Text(progress.sizeText + (progress.speedText.isNotEmpty ? ' • ' + progress.speedText : '') + (progress.etaText.isNotEmpty ? ' • ' + progress.etaText : ''), style: const TextStyle(fontSize: 14)),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1976D2).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: const Icon(
+                  Icons.download,
+                  color: Color(0xFF1976D2),
+                  size: 40,
+                ),
+              ),
               const SizedBox(height: 24),
-              Text('Feel free to switch apps or lock your device.\nThe download will continue in the background.\nWe’ll send a notification when it’s done.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: Colors.black54)),
+              Text(
+                _selectedModel ?? 'AI Model',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Color(0xFF1976D2),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    LinearProgressIndicator(
+                      value: percent,
+                      minHeight: 8,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 16),
+                    if (progress != null)
+                      Text(
+                        progress.sizeText +
+                            (progress.speedText.isNotEmpty ? ' • ${progress.speedText}' : '') +
+                            (progress.etaText.isNotEmpty ? ' • ${progress.etaText}' : ''),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Feel free to switch apps or lock your device.\nThe download will continue in the background.\n',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
+                  height: 1.5,
+                ),
+              ),
             ],
           ),
         ),
@@ -144,77 +203,186 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     // Onboarding UI
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.android, color: colorScheme.primary, size: 40),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1976D2).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: const Icon(
+                    Icons.medical_services,
+                    color: Color(0xFF1976D2),
+                    size: 40,
+                  ),
+                ),
                 const SizedBox(height: 24),
-                Text('Welcome to AI Edge', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colorScheme.onBackground)),
-                const SizedBox(height: 32),
-                TextField(
-                  controller: _nameController,
-                  style: const TextStyle(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'Your Name',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                const Text(
+                  'Welcome to MedAssist',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1976D2),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _hfTokenController,
-                  style: const TextStyle(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'Hugging Face Token',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    errorText: _tokenError,
+                const SizedBox(height: 8),
+                Text(
+                  'Set up your AI-powered medical assistant',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
                   ),
-                  obscureText: true,
-                  onChanged: (value) {
-                    if (value.isNotEmpty) {
-                      _verifyToken(value.trim());
-                    } else {
-                      setState(() {
-                        _tokenValid = false;
-                        _tokenError = null;
-                      });
-                    }
-                  },
+                  textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 40),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: TextField(
+                    controller: _nameController,
+                    style: const TextStyle(fontSize: 16),
+                    decoration: const InputDecoration(
+                      labelText: 'Your Name',
+                      labelStyle: TextStyle(color: Color(0xFF1976D2)),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _tokenError != null ? Colors.red : Colors.grey[300]!,
+                      width: _tokenError != null ? 2 : 1,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _hfTokenController,
+                    style: const TextStyle(fontSize: 16),
+                    decoration: InputDecoration(
+                      labelText: 'Hugging Face Token',
+                      labelStyle: TextStyle(
+                        color: _tokenError != null ? Colors.red : const Color(0xFF1976D2),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      suffixIcon: _tokenValid
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : null,
+                    ),
+                    obscureText: true,
+                    onChanged: (value) {
+                      if (value.isNotEmpty) {
+                        _verifyToken(value.trim());
+                      } else {
+                        setState(() {
+                          _tokenValid = false;
+                          _tokenError = null;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                if (_tokenError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      _tokenError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
                 if (_verifyingToken)
                   const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: LinearProgressIndicator(minHeight: 2),
+                    padding: EdgeInsets.only(top: 12.0),
+                    child: LinearProgressIndicator(
+                      backgroundColor: Colors.grey,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                      minHeight: 3,
+                    ),
                   ),
-                const SizedBox(height: 24),
-                _loadingModels
-                    ? const CircularProgressIndicator()
-                    : DropdownButtonFormField<String>(
-                        value: _selectedModel,
-                        items: _modelNames.map((name) => DropdownMenuItem(value: name, child: Text(name))).toList(),
-                        onChanged: (value) => setState(() => _selectedModel = value),
-                        decoration: const InputDecoration(
-                          labelText: 'Select Model',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: _loadingModels
+                      ? const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Loading models...',
+                                style: TextStyle(color: Color(0xFF1976D2)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : DropdownButtonFormField<String>(
+                          value: _selectedModel,
+                          items: _modelNames
+                              .map((name) => DropdownMenuItem(
+                                    value: name,
+                                    child: Text(name),
+                                  ))
+                              .toList(),
+                          onChanged: (value) => setState(() => _selectedModel = value),
+                          decoration: const InputDecoration(
+                            labelText: 'Select Model',
+                            labelStyle: TextStyle(color: Color(0xFF1976D2)),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                          ),
+                          dropdownColor: Colors.white,
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1976D2)),
                         ),
-                      ),
-                const SizedBox(height: 32),
+                ),
+                const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1976D2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                      disabledBackgroundColor: Colors.grey[300],
+                      disabledForegroundColor: Colors.grey[500],
                     ),
                     onPressed: (!_tokenValid || _verifyingToken)
                         ? null
@@ -270,7 +438,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               Navigator.of(context).pushReplacementNamed('/welcome');
                             }
                           },
-                    child: const Text('Continue'),
+                    child: const Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],

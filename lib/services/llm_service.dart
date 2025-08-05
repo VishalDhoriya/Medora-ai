@@ -24,7 +24,7 @@ class LlmService {
       final result = await _channel.invokeMethod('initializeModel', {
         'modelId': config.modelId,
         'modelPath': modelPath,
-        'maxTokens': maxTokens ?? 1024,
+        'maxTokens': maxTokens ?? 8192,  // Increased from 1024
         'temperature': temperature ?? 1.0,
         'topK': topK ?? 40,
         'topP': topP ?? 0.9,
