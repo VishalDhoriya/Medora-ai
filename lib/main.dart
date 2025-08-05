@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
-void main() {
+void main() async {
+  // Ensure Flutter binding is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
   runApp(const MyApp());
 }
 
@@ -16,10 +23,9 @@ class MyApp extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('onboard_name');
     final model = prefs.getString('onboard_model');
-    final token = prefs.getString('onboard_hf_token');
+    // No longer checking for HF token - using embedded token
     return name != null && name.isNotEmpty &&
-           model != null && model.isNotEmpty &&
-           token != null && token.isNotEmpty;
+           model != null && model.isNotEmpty;
   }
 
   @override

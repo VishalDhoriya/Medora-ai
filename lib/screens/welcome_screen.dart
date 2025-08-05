@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gallery/screens/real_time_transcriber.dart';
 import 'package:flutter_gallery/screens/transcribing_timeline_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
@@ -317,11 +318,31 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome'),
+        title: Row(
+          children: [
+            // Import Phosphor icons at the top of your file:
+            // import 'package:phosphor_flutter/phosphor_flutter.dart';
+            Icon(
+              PhosphorIcons.firstAidKit(),
+              size: 40, // Bigger icon
+              color: const Color(0xFF1976D2), // Use theme secondary color
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Medora AI',
+              style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 26,
+          color: Color(0xFF1976D2),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _openSettings,
+            color: const Color(0xFF1976D2),
           ),
         ],
       ),

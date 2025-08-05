@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import '../services/model_config_service.dart';
 import '../services/model_download_service.dart';
+import '../constants/app_constants.dart';
 import 'dart:async';
 
 class SettingsScreen extends StatefulWidget {
@@ -14,10 +15,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _nameController = TextEditingController();
-  final _hfTokenController = TextEditingController();
-  String? _selectedModel;
   List<ModelConfig> _modelConfigs = [];
-  List<String> _modelNames = [];
   Map<String, bool> _downloadedStatus = {};
   bool _loading = true;
   bool _isDownloading = false;
@@ -33,12 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadPrefsAndModels() async {
     final prefs = await SharedPreferences.getInstance();
     _nameController.text = prefs.getString('onboard_name') ?? '';
-    _hfTokenController.text = prefs.getString('onboard_hf_token') ?? '';
-    _selectedModel = prefs.getString('onboard_model');
+    // No longer loading HF token from preferences - using embedded token
     final configs = await ModelConfigService.loadModelConfigs();
-    final names = configs.map((c) => c.modelName).toList();
     _modelConfigs = configs;
-    _modelNames = names;
     // Check which models are downloaded
     for (final config in configs) {
       _downloadedStatus[config.modelName] = await _isModelDownloaded(config.modelName);
@@ -67,9 +62,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _savePrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('onboard_name', _nameController.text.trim());
-    await prefs.setString('onboard_hf_token', _hfTokenController.text.trim());
-    if (_selectedModel != null) {
-      await prefs.setString('onboard_model', _selectedModel!);
+    // No longer saving HF token to preferences - using embedded token
+    if (_modelConfigs.isNotEmpty) {
+      await prefs.setString('onboard_model', _modelConfigs.first.modelName);
     }
     Navigator.of(context).pop();
     // Optionally notify other screens of changes
@@ -112,25 +107,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     
                     const SizedBox(height: 16),
                     
-                    // API Configuration Section
-                    _buildSectionCard(
-                      title: 'API Configuration',
-                      icon: Icons.key_outlined,
-                      child: Column(
-                        children: [
-                          _buildInputField(
-                            label: 'Hugging Face Token',
-                            controller: _hfTokenController,
-                            icon: Icons.security,
-                            hint: 'Enter your HF token',
-                            obscureText: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
                     // Model Selection Section
                     _buildSectionCard(
                       title: 'AI Model',
@@ -138,7 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_modelNames.isEmpty)
+                          // Current Model Display
+                          if (_modelConfigs.isEmpty)
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
@@ -147,9 +124,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey[300]!),
                               ),
-                              child: Text(
-                                _selectedModel ?? 'No model selected',
-                                style: const TextStyle(
+                              child: const Text(
+                                'No model available',
+                                style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey,
                                 ),
@@ -158,71 +135,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           else
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.2)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF1976D2).withOpacity(0.05),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _selectedModel,
-                                  hint: const Text('Select a model'),
-                                  isExpanded: true,
-                                  items: _modelConfigs.map((config) {
-                                    final downloaded = _downloadedStatus[config.modelName] ?? false;
-                                    return DropdownMenuItem(
-                                      value: config.modelName,
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              config.modelName,
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: downloaded ? Colors.green[50] : Colors.orange[50],
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  downloaded ? Icons.check_circle : Icons.cloud_download,
-                                                  color: downloaded ? Colors.green[700] : Colors.orange[700],
-                                                  size: 16,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  downloaded ? 'Ready' : 'Download',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: downloaded ? Colors.green[700] : Colors.orange[700],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1976D2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.psychology,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) async {
-                                    setState(() { _selectedModel = value; });
-                                  },
-                                ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _modelConfigs.first.modelName,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF1A1A1A),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Currently Active Model',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: (_downloadedStatus[_modelConfigs.first.modelName] ?? false) 
+                                              ? Colors.green[50] 
+                                              : Colors.orange[50],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              (_downloadedStatus[_modelConfigs.first.modelName] ?? false) 
+                                                  ? Icons.check_circle 
+                                                  : Icons.cloud_download,
+                                              color: (_downloadedStatus[_modelConfigs.first.modelName] ?? false) 
+                                                  ? Colors.green[700] 
+                                                  : Colors.orange[700],
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              (_downloadedStatus[_modelConfigs.first.modelName] ?? false) 
+                                                  ? 'Ready' 
+                                                  : 'Download',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: (_downloadedStatus[_modelConfigs.first.modelName] ?? false) 
+                                                    ? Colors.green[700] 
+                                                    : Colors.orange[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           
                           const SizedBox(height: 16),
                           
                           // Download section
-                          if (_selectedModel != null && !(_downloadedStatus[_selectedModel!] ?? false))
+                          if (_modelConfigs.isNotEmpty && !(_downloadedStatus[_modelConfigs.first.modelName] ?? false))
                             _isDownloading && _downloadProgress != null
                                 ? Container(
                                     padding: const EdgeInsets.all(16),
@@ -289,9 +302,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         elevation: 2,
                                       ),
                                       onPressed: () async {
-                                        final configList = _modelConfigs.where((c) => c.modelName == _selectedModel).toList();
-                                        if (configList.isEmpty) return;
-                                        final config = configList.first;
+                                        if (_modelConfigs.isEmpty) return;
+                                        final config = _modelConfigs.first;
                                         setState(() { _isDownloading = true; });
                                         _downloadSub = ModelDownloadService.getDownloadProgress().listen((progress) {
                                           setState(() { _downloadProgress = progress; });
@@ -300,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             _downloadSub = null;
                                             setState(() {
                                               _isDownloading = false;
-                                              _downloadedStatus[_selectedModel!] = true;
+                                              _downloadedStatus[_modelConfigs.first.modelName] = true;
                                             });
                                           } else if (progress.state == 'failed' || progress.state == 'cancelled') {
                                             _downloadSub?.cancel();
@@ -315,7 +327,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           fileName: config.modelFile,
                                           modelDir: config.modelDir,
                                           totalBytes: config.totalBytes,
-                                          accessToken: _hfTokenController.text.trim(),
+                                          accessToken: AppConstants.huggingFaceToken, // Use embedded token
                                         );
                                       },
                                     ),
