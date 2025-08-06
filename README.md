@@ -110,6 +110,20 @@ All medical data stays on-device. Ideal for clinics without internet.
 
 ---
 
+🔑 **Getting Started: Hugging Face Token Required**
+
+To run Medora AI in debug mode or to try it out, you must provide your own Hugging Face access token.  
+1. Copy `.env.example` to `.env` in the project root.  
+2. Add your Hugging Face token to the `HUGGINGFACE_TOKEN` variable in `.env`.  
+3. Run the app as usual.
+
+This is required for downloading the Gemma model from Hugging Face.
+
+**Or, if you just want the APK:**  
+You can simply download the latest Medora AI APK from [this Google Drive link](https://drive.google.com/drive/folders/1NZm-ebiNzNJ7EwO4LAcaCIeJ6rlv3EcG) — no setup required.
+
+---
+
 🧪 Prompt Format
 
 System Prompt Output (Simplified JSON):
@@ -161,4 +175,26 @@ Doctors needing quick SOAP draft generation
 Field workers needing offline medical documentation
 
 Privacy-conscious medical apps
+
+---
+
+## Requirements
+
+- Android device (recommended: Android 10+)
+- Flutter (latest stable)
+- Internet connection (for initial model download only)
+  - **Note:** If your internet connection is weak or interrupted during the initial download, the model may fail to initialize and the app will not function until the download completes successfully.
+- Hugging Face account (for access token)
+
+---
+
+## Contributing
+
+Contributions are welcome! Please open issues or submit pull requests for improvements.
+
+---
+
+## Contact
+
+For support or questions, contact: [vishaldhoriya.work@gmail.com] or try [202101446@dau.ac.in]
 
