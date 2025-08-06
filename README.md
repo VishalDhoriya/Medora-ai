@@ -1,4 +1,4 @@
-#**Medora AI**
+**#Medora AI**
 
 Empowering doctors with offline clinical transcription and intelligent SOAP & summary generation — all on-device.
 
