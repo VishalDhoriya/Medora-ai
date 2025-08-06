@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'base_transcriber.dart';
-import 'transcribing_timeline/widgets/compact_patient_header.dart';
-import 'transcribing_timeline/widgets/timeline_components.dart';
-import 'transcribing_timeline/widgets/system_thoughts.dart';
-import 'transcribing_timeline/widgets/editable_soap_summary.dart';
-import 'transcribing_timeline/utils/timeline_utils.dart';
-import 'transcribing_timeline/utils/timeline_process_controller.dart';
-import '../services/database_service.dart';
+import '../base_transcriber/base_transcriber.dart';
+import 'widgets/compact_patient_header.dart';
+import 'widgets/timeline_components.dart';
+import 'widgets/system_thoughts.dart';
+import 'widgets/editable_soap_summary.dart';
+import 'utils/timeline_utils.dart';
+import 'utils/timeline_process_controller.dart';
+import '../../core/services/database_service.dart';
 
 /// A beautiful timeline UI that uses TranscribingScreen as a backend module.
 /// It launches the process, listens for transcript and LLM results, and displays each step in a timeline with gradients and expandable cards.

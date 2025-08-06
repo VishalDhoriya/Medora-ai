@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/database_service.dart';
+import '../../../../core/services/database_service.dart';
 import '../utils/welcome_utils.dart';
 import 'soap_analysis_section.dart';
 import 'conversation_card.dart';

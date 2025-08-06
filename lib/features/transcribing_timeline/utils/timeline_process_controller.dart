@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter_gallery/screens/base_transcriber.dart';
-import '../../../services/database_service.dart';
-import '../../../services/llm_service.dart';
+import '../../base_transcriber/base_transcriber.dart';
+import '../../../core/services/database_service.dart';
+import '../../../core/services/llm_service.dart';
 import 'timeline_utils.dart';
 
 class TimelineProcessController {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/database_service.dart';
+import '../../../../core/services/database_service.dart';
 
 class PatientForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onPatientCreated;

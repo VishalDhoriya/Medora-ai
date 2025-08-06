@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/model_config_service.dart';
-import '../services/model_download_service.dart';
-import '../constants/app_constants.dart';
+import '../../core/services/model_config_service.dart';
+import '../../core/services/model_download_service.dart';
+import '../../core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 

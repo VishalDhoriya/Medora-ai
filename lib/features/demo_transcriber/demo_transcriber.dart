@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
-import '../services/demo_speech_service.dart';
-import 'base_transcriber.dart';
+import '../base_transcriber/base_transcriber.dart';
+import '../../core/services/demo_speech_service.dart';
 
 class DemoTranscriber extends BaseTranscriber {
   final AudioRecorder _audioRecorder = AudioRecorder();

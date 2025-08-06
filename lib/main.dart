@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/welcome_screen.dart';
+import './features/onboarding/onboarding_screen.dart';
+import './features/welcome/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 

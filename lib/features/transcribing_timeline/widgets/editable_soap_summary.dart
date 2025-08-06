@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/pdf_generator_service.dart';
+import '../../../core/services/pdf_generator_service.dart';
 
 class EditableSoapSummary extends StatefulWidget {
   final Map<String, dynamic> json;

@@ -1,22 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gallery/screens/real_time_transcriber.dart';
-import 'package:flutter_gallery/screens/demo_transcriber.dart';
-import 'package:flutter_gallery/screens/transcribing_timeline_screen.dart';
+import '../real_time_transcriber/real_time_transcriber.dart';
+import '../demo_transcriber/demo_transcriber.dart';
+import '../transcribing_timeline/transcribing_timeline_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
-import '../services/database_service.dart';
-import '../services/llm_service.dart';
-import '../services/model_config_service.dart';
-import 'settings_screen.dart';
-import 'welcome/widgets/patient_form.dart';
-import 'welcome/widgets/patient_info_and_recording.dart';
-import 'welcome/widgets/welcome_message.dart';
+import '../../core/services/database_service.dart';
+import '../../core/services/llm_service.dart';
+import '../../core/services/model_config_service.dart';
+import '../settings/settings_screen.dart';
+import 'widgets/patient_form.dart';
+import 'widgets/patient_info_and_recording.dart';
+import 'widgets/welcome_message.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
