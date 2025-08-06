@@ -1,4 +1,4 @@
-Medora AI
+#**Medora AI**
 
 Empowering doctors with offline clinical transcription and intelligent SOAP & summary generation — all on-device.
 
@@ -162,18 +162,3 @@ Field workers needing offline medical documentation
 
 Privacy-conscious medical apps
 
-
-
----
-
-👥 Contributors
-
-Shekhar Gupta
-
-[Your teammate’s name here]
-
-
-
----
-
-Let me know if you want this as a downloadable file again or with GitHub-flavored badges or screenshots.
